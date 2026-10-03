@@ -106,19 +106,16 @@ window.renderGameApp=function(){
   window.tvGameActive=false;
   const root=$('panelBody');
   const last=localStorage.getItem('tvLastHtml5Game')||'';
-  const featured=GAMES.find(g=>g.id===last)||GAMES[0];
-  const rest=GAMES.filter(g=>g.id!==featured.id);
 
   root.innerHTML=
     '<div class="html5-game-hub">'+
       '<div class="html5-game-header">'+
         '<div><p class="html5-kicker">HTML5 · GAMEPAD · KHÔNG CẦN CÀI</p>'+
         '<h3>Game đồ họa đẹp cho TV</h3>'+
-        '<p>D-pad để chọn · A/OK để mở · khi trang game hiện “Run game”, nhấn A/OK thêm một lần. Remote Back để trở lại Game Center.</p></div>'+
+        '<p>D-pad chọn · A/OK mở · nếu trang game hiện “Run game”, nhấn A/OK thêm một lần · Remote Back để quay lại.</p></div>'+
         '<div class="html5-controller">🎮 <strong>F710</strong><span>XInput</span></div>'+
       '</div>'+
-      '<section class="html5-featured"><p class="html5-section-title">TIẾP TỤC / NỔI BẬT</p>'+gameCard(featured,true)+'</section>'+
-      '<section><p class="html5-section-title">THƯ VIỆN GAME</p><div class="html5-game-grid">'+rest.map(g=>gameCard(g,false)).join('')+'</div></section>'+
+      '<div class="html5-game-grid">'+GAMES.map(g=>gameCard(g,g.id===last)).join('')+'</div>'+
     '</div>';
 
   root.querySelectorAll('[data-html5-game]').forEach(btn=>{
