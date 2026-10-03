@@ -1,4 +1,4 @@
-const VERSION='6.1.0';
+const VERSION='6.2.0';
 const $=id=>document.getElementById(id);
 const els={clock:$('clock'),today:$('today'),greeting:$('greeting'),networkDot:$('networkDot'),networkText:$('networkText'),gamepadStatus:$('gamepadStatus'),panel:$('appPanel'),panelTitle:$('panelTitle'),panelEyebrow:$('panelEyebrow'),panelBody:$('panelBody'),panelClock:$('panelClock'),backBtn:$('backBtn'),toast:$('toast'),fullscreenBtn:$('fullscreenBtn'),wakeBtn:$('wakeBtn'),wakeState:$('wakeState'),reloadBtn:$('reloadBtn')};
 let currentApp='',lastFocused=null,wakeLock=null,lastPadNav=0,padPrev={a:false,b:false,start:false,up:false,down:false,left:false,right:false};
@@ -19,7 +19,8 @@ function padSnapshot(p){if(!p)return null;const ax=p.axes||[],btn=p.buttons||[],
 function pollGamepadUI(){
   const p=firstPad();
   if(p){els.gamepadStatus.textContent='🎮 '+(p.id||'Gamepad');els.gamepadStatus.classList.add('connected')}else{els.gamepadStatus.textContent='🎮 Chưa thấy tay cầm';els.gamepadStatus.classList.remove('connected')}
-  if(!window.tvGameActive&&p){\n    if(window.tvGameInputLockUntil&&performance.now()<window.tvGameInputLockUntil){padPrev=padSnapshot(p);requestAnimationFrame(pollGamepadUI);return}
+  if(!window.tvGameActive&&p){
+    if(window.tvGameInputLockUntil&&performance.now()<window.tvGameInputLockUntil){padPrev=padSnapshot(p);requestAnimationFrame(pollGamepadUI);return}
     const s=padSnapshot(p),now=performance.now();
     const dirs=['up','down','left','right'];
     for(const d of dirs)if(s[d]&&!padPrev[d]&&now-lastPadNav>90){move(d);lastPadNav=now}
