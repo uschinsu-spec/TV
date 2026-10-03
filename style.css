@@ -891,3 +891,214 @@ body.game-running{overflow:hidden}
 @media (max-width:759px), (orientation:portrait){
   .app-grid{grid-template-columns:1fr}
 }
+
+
+/* V7.2 HTML5 TV Game Hub */
+.app-panel[data-app="game"] .panel-body{
+  height:calc(100vh - 138px);
+  padding-top:14px;
+  padding-bottom:14px;
+  overflow:hidden;
+}
+.html5-game-hub{
+  height:100%;
+  min-height:0;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  gap:12px;
+}
+.html5-game-header{
+  min-height:72px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:22px;
+  padding:0 4px;
+}
+.html5-game-header>div:first-child{min-width:0}
+.html5-kicker{
+  margin:0 0 4px;
+  color:var(--cyan);
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.14em;
+}
+.html5-game-header h3{
+  margin:0;
+  font-size:clamp(25px,2.2vw,36px);
+  line-height:1.05;
+}
+.html5-game-header p:not(.html5-kicker){
+  margin:5px 0 0;
+  color:var(--muted);
+  font-size:clamp(12px,1.05vw,16px);
+  line-height:1.25;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.html5-controller{
+  flex:0 0 auto;
+  min-width:118px;
+  min-height:56px;
+  display:grid;
+  grid-template-columns:auto auto;
+  grid-template-rows:auto auto;
+  align-items:center;
+  column-gap:8px;
+  padding:8px 12px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:#101a28;
+  font-size:20px;
+}
+.html5-controller strong{font-size:15px}
+.html5-controller span{
+  grid-column:2;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:800;
+}
+.html5-game-grid{
+  min-height:0;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-rows:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.html5-game-card{
+  min-width:0;
+  min-height:0;
+  position:relative;
+  overflow:hidden;
+  display:grid;
+  grid-template-rows:minmax(72px,44%) minmax(0,1fr);
+  padding:0;
+  border:2px solid rgba(255,255,255,.12);
+  border-radius:20px;
+  background:#101923;
+  color:var(--text);
+  text-align:left;
+  transition:transform .11s ease,border-color .11s ease,background .11s ease;
+}
+.html5-game-card.featured::after{
+  content:"GẦN ĐÂY";
+  position:absolute;
+  top:10px;
+  right:10px;
+  z-index:4;
+  padding:4px 7px;
+  border-radius:999px;
+  background:rgba(0,0,0,.52);
+  color:#fff;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.08em;
+}
+.html5-cover{
+  min-height:0;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  background:linear-gradient(145deg,#26394c,#0d1620);
+}
+.html5-cover::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(180deg,transparent 45%,rgba(0,0,0,.34));
+}
+.html5-icon{
+  position:relative;
+  z-index:2;
+  font-size:clamp(40px,4.2vw,68px);
+  filter:drop-shadow(0 8px 14px rgba(0,0,0,.38));
+}
+.html5-badge{
+  position:absolute;
+  left:10px;
+  bottom:8px;
+  z-index:3;
+  padding:4px 7px;
+  border-radius:999px;
+  background:rgba(0,0,0,.5);
+  color:#fff;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.08em;
+}
+.html5-game-card[data-theme="racing"] .html5-cover{background:linear-gradient(145deg,#174b72,#12202d 55%,#3c2415)}
+.html5-game-card[data-theme="survival"] .html5-cover{background:linear-gradient(145deg,#5c2433,#21131b 58%,#101722)}
+.html5-game-card[data-theme="cyber"] .html5-cover{background:linear-gradient(145deg,#513576,#16243a 58%,#122023)}
+.html5-game-card[data-theme="adventure"] .html5-cover{background:linear-gradient(145deg,#285641,#172d27 56%,#243928)}
+.html5-game-card[data-theme="retro"] .html5-cover{background:linear-gradient(145deg,#7b3b31,#39243b 50%,#10253e)}
+.html5-game-card[data-theme="temple"] .html5-cover{background:linear-gradient(145deg,#78643d,#2f2b28 55%,#17232d)}
+.html5-game-card[data-theme="rpg"] .html5-cover{background:linear-gradient(145deg,#56382e,#25202c 55%,#162231)}
+.html5-info{
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  padding:10px 12px 9px;
+}
+.html5-info strong{
+  display:block;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  font-size:clamp(15px,1.35vw,21px);
+  line-height:1.1;
+}
+.html5-genre{
+  margin-top:3px;
+  color:var(--cyan);
+  font-size:10px;
+  font-weight:850;
+}
+.html5-desc{
+  margin-top:5px;
+  color:#aebed0;
+  font-size:clamp(10px,.9vw,13px);
+  line-height:1.22;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.html5-play{
+  margin-top:auto;
+  padding-top:5px;
+  color:var(--focus);
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.07em;
+}
+.html5-game-card:focus{
+  border-color:var(--focus)!important;
+  box-shadow:0 0 0 6px var(--focus),0 18px 36px rgba(0,0,0,.5);
+  transform:scale(1.045);
+  background:#172536;
+  z-index:15;
+}
+@media (min-width:760px) and (orientation:landscape) and (max-height:620px){
+  .app-panel[data-app="game"] .panel-body{height:calc(100vh - 120px);padding-top:8px;padding-bottom:8px}
+  .html5-game-hub{gap:8px}
+  .html5-game-header{min-height:52px}
+  .html5-game-header h3{font-size:24px}
+  .html5-game-header p:not(.html5-kicker){font-size:11px}
+  .html5-controller{min-height:46px}
+  .html5-game-grid{gap:8px}
+  .html5-game-card{border-radius:16px;grid-template-rows:minmax(58px,42%) minmax(0,1fr)}
+  .html5-icon{font-size:38px}
+  .html5-info{padding:7px 9px 6px}
+  .html5-info strong{font-size:14px}
+  .html5-desc{font-size:9px}
+}
+@media (max-width:759px), (orientation:portrait){
+  .app-panel[data-app="game"] .panel-body{height:auto;overflow:auto}
+  .html5-game-hub{height:auto;display:block}
+  .html5-game-header{margin-bottom:12px}
+  .html5-game-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none}
+  .html5-game-card{min-height:220px}
+}
