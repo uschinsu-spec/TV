@@ -45,7 +45,8 @@ function text(msg,x,y,size=24,align='left'){ctx.fillStyle='#eef5ff';ctx.font='70
 function loop(update,draw){
   function frame(t){if(!window.tvGameActive)return;const dt=Math.min(.04,(t-last)/1000||.016);last=t;const c=input();if(c.bEdge){exitGame();return}if(c.startEdge){paused=!paused;$('gameState').textContent=paused?'Tạm dừng':'Đang chơi'}if(!paused)update(dt,c);draw(c);raf=requestAnimationFrame(frame)}raf=requestAnimationFrame(frame)
 }
-function cycleGameNative(delta){const i=Math.max(0,GAMES.findIndex(g=>g[0]===game));startGame(GAMES[(i+delta+GAMES.length)%GAMES.length][0])}\nfunction startGame(name){cleanup();game=name;window.tvGameActive=true;padPrev={};$('gameState').textContent='Đang chơi '+(GAMES.find(g=>g[0]===name)?.[1]||name);$('gameScore').textContent='Điểm: 0';({snake:startSnake,pong:startPong,breakout:startBreakout,shooter:startShooter,racer:startRacer,flappy:startFlappy,asteroids:startAsteroids,catcher:startCatcher,'2048':start2048,reaction:startReaction}[name])?.()}
+function cycleGameNative(delta){const i=Math.max(0,GAMES.findIndex(g=>g[0]===game));startGame(GAMES[(i+delta+GAMES.length)%GAMES.length][0])}
+function startGame(name){cleanup();game=name;window.tvGameActive=true;padPrev={};$('gameState').textContent='Đang chơi '+(GAMES.find(g=>g[0]===name)?.[1]||name);$('gameScore').textContent='Điểm: 0';({snake:startSnake,pong:startPong,breakout:startBreakout,shooter:startShooter,racer:startRacer,flappy:startFlappy,asteroids:startAsteroids,catcher:startCatcher,'2048':start2048,reaction:startReaction}[name])?.()}
 
 function startSnake(){
   setupCanvas();const cell=24,cols=40,rows=22;state={body:[{x:10,y:10},{x:9,y:10},{x:8,y:10}],dir:{x:1,y:0},next:{x:1,y:0},food:{x:22,y:10},acc:0,score:0,over:false};

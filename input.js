@@ -1,5 +1,6 @@
 (function(){
-'use strict';\nwindow.__TV_INPUT_BRIDGE_READY__=true;
+'use strict';
+window.__TV_INPUT_BRIDGE_READY__=true;
 
 const NAV_ON=.52;
 const NAV_OFF=.30;
