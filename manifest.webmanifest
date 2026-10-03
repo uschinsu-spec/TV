@@ -1,7 +1,7 @@
 {
   "name":"Xiaomi TV Hub",
   "short_name":"TV Hub",
-  "description":"Launcher web tối ưu cho Xiaomi Android TV và remote D-pad.",
+  "description":"TV Hub và bộ tiện ích chạy trực tiếp trên Xiaomi Android TV bằng remote D-pad.",
   "start_url":"./",
   "scope":"./",
   "display":"standalone",
