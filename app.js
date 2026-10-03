@@ -19,7 +19,7 @@ function padSnapshot(p){if(!p)return null;const ax=p.axes||[],btn=p.buttons||[],
 function pollGamepadUI(){
   const p=firstPad();
   if(p){els.gamepadStatus.textContent='🎮 '+(p.id||'Gamepad');els.gamepadStatus.classList.add('connected')}else{els.gamepadStatus.textContent='🎮 Chưa thấy tay cầm';els.gamepadStatus.classList.remove('connected')}
-  if(!window.tvGameActive&&p){
+  if(!window.tvGameActive&&p){\n    if(window.tvGameInputLockUntil&&performance.now()<window.tvGameInputLockUntil){padPrev=padSnapshot(p);requestAnimationFrame(pollGamepadUI);return}
     const s=padSnapshot(p),now=performance.now();
     const dirs=['up','down','left','right'];
     for(const d of dirs)if(s[d]&&!padPrev[d]&&now-lastPadNav>90){move(d);lastPadNav=now}
