@@ -3,69 +3,82 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#07111e">
+  <meta name="theme-color" content="#060a11">
   <meta name="color-scheme" content="dark">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>Xiaomi TV Home V6.6</title>
+  <title>TV Home · 10-foot UI V7</title>
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./style.css?v=6.6">
+  <link rel="stylesheet" href="./style.css?v=7.0">
 </head>
 <body>
-  <div class="ambient" aria-hidden="true"></div>
-
   <main class="shell" id="homeScreen">
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">XIAOMI ANDROID TV · HOME</p>
+    <header class="tv-header">
+      <div class="brand-block">
+        <p class="eyebrow">ANDROID TV HOME</p>
         <h1 id="greeting">TV Home</h1>
         <p id="today" class="muted">Đang tải ngày giờ…</p>
       </div>
-      <div class="status-card">
-        <div id="clock" class="clock">--:--</div>
-        <div class="status-line"><span id="networkDot" class="dot"></span><span id="networkText">Đang kiểm tra mạng</span></div>
-        <div id="gamepadStatus" class="device-line">🎮 Chưa thấy tay cầm</div>
+
+      <div class="header-status" aria-label="Trạng thái TV">
+        <div class="clock-wrap">
+          <div id="clock" class="clock">--:--</div>
+        </div>
+        <div class="status-pills">
+          <div class="status-pill"><span id="networkDot" class="dot"></span><span id="networkText">Đang kiểm tra mạng</span></div>
+          <div id="gamepadStatus" class="status-pill device-line">🎮 Remote sẵn sàng</div>
+        </div>
       </div>
     </header>
 
-    <section class="apps-section">
-      <p class="eyebrow">CHỌN NỘI DUNG</p>
+    <section class="apps-section" aria-label="Ứng dụng chính">
+      <div class="section-heading">
+        <p class="eyebrow">CHỌN NỘI DUNG</p>
+        <p class="remote-hint">D-pad để di chuyển · OK để mở · Back để quay lại</p>
+      </div>
+
       <div class="app-grid">
         <button class="app-card app-tv focusable" data-app="tv">
-          <span class="app-icon">📺</span>
+          <span class="card-kicker">TRỰC TIẾP</span>
+          <span class="app-icon" aria-hidden="true">📺</span>
           <span class="app-title">Xem TV</span>
-          <span class="app-desc">Mở là phát VTV1 · chuyển VTV1–VTV9 ngay</span>
+          <span class="app-desc">VTV1–VTV9 · mở là xem ngay</span>
+          <span class="card-action">OK · MỞ TV</span>
         </button>
 
         <button class="app-card app-youtube focusable" data-app="youtube">
-          <span class="app-icon">▶️</span>
+          <span class="card-kicker">VIDEO</span>
+          <span class="app-icon" aria-hidden="true">▶</span>
           <span class="app-title">YouTube</span>
-          <span class="app-desc">Player YouTube ngay trong TV Home · nhớ video gần nhất</span>
+          <span class="app-desc">Xem ngay trong TV Home</span>
+          <span class="card-action">OK · MỞ YOUTUBE</span>
         </button>
 
         <button class="app-card app-game focusable" data-app="game">
-          <span class="app-icon">🎮</span>
+          <span class="card-kicker">GIẢI TRÍ</span>
+          <span class="app-icon" aria-hidden="true">🎮</span>
           <span class="app-title">Game Center</span>
-          <span class="app-desc">10 game · Logitech F710 / gamepad / remote / bàn phím</span>
+          <span class="app-desc">10 game · F710 / remote</span>
+          <span class="card-action">OK · CHỌN GAME</span>
         </button>
       </div>
     </section>
 
-    <section class="system-strip">
-      <button id="fullscreenBtn" class="sys-btn focusable">⛶ Toàn màn hình</button>
-      <button id="wakeBtn" class="sys-btn focusable">☀ Giữ màn hình sáng <small id="wakeState">Tắt</small></button>
-      <button id="reloadBtn" class="sys-btn focusable">↻ Tải lại</button>
+    <section class="quick-actions" aria-label="Cài đặt nhanh">
+      <span class="quick-label">Cài đặt nhanh</span>
+      <div class="quick-buttons">
+        <button id="autoFullscreenBtn" class="sys-btn focusable">⛶ <span>Tự động toàn màn hình</span> <small id="autoFullscreenState">Bật</small></button>
+        <button id="tvModeBtn" class="sys-btn focusable">📺 <span>TV Mode</span> <small id="tvModeState">Bật</small></button>
+        <button id="fullscreenBtn" class="sys-btn focusable">⛶ <span>Toàn màn hình</span></button>
+        <button id="wakeBtn" class="sys-btn focusable">☀ <span>Giữ màn hình sáng</span> <small id="wakeState">Tắt</small></button>
+        <button id="reloadBtn" class="sys-btn focusable">↻ <span>Tải lại</span></button>
+      </div>
     </section>
-
-    <footer>
-      <span>Xiaomi TV Home V6.6</span>
-      <span>F710: D-pad/Analog · A chọn · B quay lại · Start tạm dừng game</span>
-    </footer>
   </main>
 
   <section id="appPanel" class="app-panel" aria-hidden="true">
     <header class="panel-top">
-      <button id="backBtn" class="back-btn focusable">← Quay lại</button>
-      <div>
+      <button id="backBtn" class="back-btn focusable">← <span>Quay lại</span></button>
+      <div class="panel-heading">
         <p class="eyebrow" id="panelEyebrow">ỨNG DỤNG</p>
         <h2 id="panelTitle">Xem TV</h2>
       </div>
@@ -77,9 +90,9 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
-  <script src="./app.js?v=6.6"></script>
-  <script src="./input.js?v=6.6"></script>
-  <script src="./media.js?v=6.6"></script>
-  <script src="./games.js?v=6.6"></script>
+  <script src="./app.js?v=7.0"></script>
+  <script src="./input.js?v=7.0"></script>
+  <script src="./media.js?v=7.0"></script>
+  <script src="./games.js?v=7.0"></script>
 </body>
 </html>
