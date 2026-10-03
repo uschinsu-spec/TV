@@ -4,7 +4,7 @@
     <uses-feature android:name="android.software.leanback" android:required="true" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <uses-feature android:name="android.hardware.mouse" android:required="false" />
-    <uses-feature android:name="android.hardware.keyboard" android:required="false" />
+    <uses-feature android:name="android.hardware.keyboard" android:required="false" />\n    <uses-feature android:name="android.hardware.gamepad" android:required="false" />
 
     <application
         android:allowBackup="true"

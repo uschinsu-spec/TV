@@ -77,3 +77,131 @@ document.addEventListener('keydown',e=>{
 });
 if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').then(r=>r.update()).catch(()=>{}));
 els.versionText.textContent='Xiaomi TV Toolbox V'+VERSION;updateClock();updateNetwork();applyPrefs();restoreWake();updateFullscreenState();setInterval(()=>{updateClock();shiftScreensaver()},1000);setTimeout(()=>document.querySelector('.direct-card')?.focus(),250);
+
+
+// ---- Android TV / Logitech F710 gamepad support ----
+(function(){
+  const GP_NAV_THRESHOLD=.58;
+  const GP_RELEASE_THRESHOLD=.34;
+  const GP_REPEAT_MS=155;
+  const nav={left:false,right:false,up:false,down:false};
+  const navAt={left:0,right:0,up:0,down:0};
+  const browserButtons=[];
+  let browserPadLabel='';
+  let rightScrollAt=0;
+
+  function gamepadActivity(){
+    if(hideScreensaver())return true;
+    resetIdle();
+    return false;
+  }
+  function focusOrClick(){
+    const el=document.activeElement;
+    if(el&&el!==document.body&&typeof el.click==='function'){
+      el.click();
+      return true;
+    }
+    document.querySelector('.tile')?.focus();
+    return true;
+  }
+  function gamepadBack(){
+    if(closeTopDialog())return true;
+    if(isTextInput(document.activeElement)){
+      document.activeElement.blur();
+      return true;
+    }
+    return false;
+  }
+  function navPulse(dir,active){
+    const now=performance.now();
+    if(!active){nav[dir]=false;return}
+    if(!nav[dir]||now-navAt[dir]>=GP_REPEAT_MS){
+      nav[dir]=true;navAt[dir]=now;moveFocus(dir);
+    }
+  }
+  function axisNav(x,y){
+    navPulse('left',x<=-GP_NAV_THRESHOLD);
+    navPulse('right',x>=GP_NAV_THRESHOLD);
+    navPulse('up',y<=-GP_NAV_THRESHOLD);
+    navPulse('down',y>=GP_NAV_THRESHOLD);
+    if(Math.abs(x)<GP_RELEASE_THRESHOLD){nav.left=false;nav.right=false}
+    if(Math.abs(y)<GP_RELEASE_THRESHOLD){nav.up=false;nav.down=false}
+  }
+  function handleButton(name,down){
+    if(!down)return;
+    gamepadActivity();
+    switch(name){
+      case 'A':
+      case 'DPAD_CENTER':
+        focusOrClick();break;
+      case 'B':
+        gamepadBack();break;
+      case 'DPAD_LEFT':
+        moveFocus('left');break;
+      case 'DPAD_RIGHT':
+        moveFocus('right');break;
+      case 'DPAD_UP':
+        moveFocus('up');break;
+      case 'DPAD_DOWN':
+        moveFocus('down');break;
+      case 'L1':
+        window.scrollBy({top:-Math.max(220,innerHeight*.55),behavior:getPrefs().performance?'auto':'smooth'});break;
+      case 'R1':
+        window.scrollBy({top:Math.max(220,innerHeight*.55),behavior:getPrefs().performance?'auto':'smooth'});break;
+      case 'START':
+        document.querySelector('.tile')?.focus();break;
+    }
+  }
+  window.addEventListener('tvgamepad',e=>{
+    const d=e.detail||{};
+    window.__lastTVGamepadDevice=d.device||window.__lastTVGamepadDevice||'Gamepad Android';
+    if(d.kind==='button')handleButton(d.name,d.action==='down');
+    if(d.kind==='axes'){
+      gamepadActivity();
+      axisNav(Number(d.lx)||Number(d.hatX)||0,Number(d.ly)||Number(d.hatY)||0);
+      const ry=Number(d.ry)||0;
+      const now=performance.now();
+      if(Math.abs(ry)>.62&&now-rightScrollAt>90){
+        rightScrollAt=now;
+        window.scrollBy({top:ry*Math.max(80,innerHeight*.13),behavior:'auto'});
+      }
+    }
+  });
+
+  window.addEventListener('gamepadconnected',e=>{
+    browserPadLabel=e.gamepad?.id||'Gamepad';
+    showToast('Đã nhận tay cầm: '+browserPadLabel.slice(0,54));
+    resetIdle();
+  });
+  window.addEventListener('gamepaddisconnected',()=>showToast('Tay cầm đã ngắt kết nối'));
+
+  const stdNames=['A','B','X','Y','L1','R1','L2','R2','SELECT','START','L3','R3','DPAD_UP','DPAD_DOWN','DPAD_LEFT','DPAD_RIGHT','HOME'];
+  function pollBrowserGamepad(){
+    if(!window.__TV_NATIVE_GAMEPAD__&&navigator.getGamepads){
+      const pads=navigator.getGamepads();
+      const gp=Array.from(pads||[]).find(Boolean);
+      if(gp){
+        browserPadLabel=gp.id||browserPadLabel;
+        const axes=gp.axes||[];
+        axisNav(Number(axes[0])||0,Number(axes[1])||0);
+        const btns=gp.buttons||[];
+        for(let i=0;i<Math.max(btns.length,stdNames.length);i++){
+          const pressed=!!btns[i]?.pressed;
+          if(pressed&&!browserButtons[i])handleButton(stdNames[i]||('BUTTON_'+(i+1)),true);
+          browserButtons[i]=pressed;
+        }
+      }
+    }
+    requestAnimationFrame(pollBrowserGamepad);
+  }
+  requestAnimationFrame(pollBrowserGamepad);
+
+  window.TVGamepad={
+    get native(){return !!window.__TV_NATIVE_GAMEPAD__},
+    get device(){return window.__lastTVGamepadDevice||browserPadLabel||''},
+    mapping:{
+      A:'OK / Click',B:'Back',DPad:'Điều hướng',LeftStick:'Điều hướng',
+      RightStick:'Cuộn',L1:'Page Up',R1:'Page Down',Start:'Về ô đầu'
+    }
+  };
+})();

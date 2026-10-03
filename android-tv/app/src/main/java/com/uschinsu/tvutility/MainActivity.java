@@ -4,7 +4,10 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.SystemClock;
+import android.view.InputDevice;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -17,9 +20,13 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 
+import java.util.Locale;
+
 public class MainActivity extends Activity {
 
     private static final String HOME_URL = "https://uschinsu-spec.github.io/TV/";
+    private static final float STICK_DEADZONE = 0.18f;
+    private static final long AXIS_DISPATCH_INTERVAL_MS = 24L;
 
     private static final String JS_CLEAR_SITE_CACHE =
             "(async function(){" +
@@ -43,6 +50,7 @@ public class MainActivity extends Activity {
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
     private boolean freshnessReloadDone = false;
+    private long lastAxisDispatchAt = 0L;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -125,6 +133,7 @@ public class MainActivity extends Activity {
                 view.requestFocus(View.FOCUS_DOWN);
                 view.evaluateJavascript(
                         "(function(){try{" +
+                        "window.__TV_NATIVE_GAMEPAD__=true;" +
                         "document.documentElement.setAttribute('tabindex','-1');" +
                         "document.documentElement.focus();" +
                         "}catch(e){}})();",
@@ -183,6 +192,10 @@ public class MainActivity extends Activity {
         return url != null && url.startsWith("https://uschinsu-spec.github.io/TV/");
     }
 
+    private boolean isHomeVisible() {
+        return webView != null && isHomeOrigin(webView.getUrl());
+    }
+
     private void clearOldWebViewCache() {
         if (webView == null) return;
         try {
@@ -218,6 +231,158 @@ public class MainActivity extends Activity {
         enterImmersiveMode();
     }
 
+    private boolean isGameControllerSource(int source) {
+        return ((source & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD) ||
+                ((source & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK);
+    }
+
+    private String controllerButtonName(int keyCode) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_BUTTON_A: return "A";
+            case KeyEvent.KEYCODE_BUTTON_B: return "B";
+            case KeyEvent.KEYCODE_BUTTON_X: return "X";
+            case KeyEvent.KEYCODE_BUTTON_Y: return "Y";
+            case KeyEvent.KEYCODE_BUTTON_L1: return "L1";
+            case KeyEvent.KEYCODE_BUTTON_R1: return "R1";
+            case KeyEvent.KEYCODE_BUTTON_L2: return "L2";
+            case KeyEvent.KEYCODE_BUTTON_R2: return "R2";
+            case KeyEvent.KEYCODE_BUTTON_START: return "START";
+            case KeyEvent.KEYCODE_BUTTON_SELECT: return "SELECT";
+            case KeyEvent.KEYCODE_BUTTON_THUMBL: return "L3";
+            case KeyEvent.KEYCODE_BUTTON_THUMBR: return "R3";
+            case KeyEvent.KEYCODE_DPAD_UP: return "DPAD_UP";
+            case KeyEvent.KEYCODE_DPAD_DOWN: return "DPAD_DOWN";
+            case KeyEvent.KEYCODE_DPAD_LEFT: return "DPAD_LEFT";
+            case KeyEvent.KEYCODE_DPAD_RIGHT: return "DPAD_RIGHT";
+            case KeyEvent.KEYCODE_DPAD_CENTER: return "DPAD_CENTER";
+            default:
+                if (keyCode >= KeyEvent.KEYCODE_BUTTON_1 && keyCode <= KeyEvent.KEYCODE_BUTTON_16) {
+                    return "BUTTON_" + (keyCode - KeyEvent.KEYCODE_BUTTON_1 + 1);
+                }
+                return KeyEvent.keyCodeToString(keyCode);
+        }
+    }
+
+    private String jsString(String value) {
+        if (value == null) return "";
+        return value
+                .replace("\\", "\\\\")
+                .replace("'", "\\'")
+                .replace("\n", " ")
+                .replace("\r", " ");
+    }
+
+    private String controllerDeviceName(InputDevice device) {
+        if (device == null) return "Android gamepad";
+        return device.getName() + " [VID " + device.getVendorId() + " PID " + device.getProductId() + "]";
+    }
+
+    private void emitGamepadButton(KeyEvent event) {
+        if (webView == null) return;
+        String action = event.getAction() == KeyEvent.ACTION_DOWN ? "down" : "up";
+        String name = controllerButtonName(event.getKeyCode());
+        String device = controllerDeviceName(event.getDevice());
+        String js = "(function(){try{" +
+                "window.__TV_NATIVE_GAMEPAD__=true;" +
+                "window.__lastTVGamepadDevice='" + jsString(device) + "';" +
+                "window.dispatchEvent(new CustomEvent('tvgamepad',{detail:{" +
+                "kind:'button'," +
+                "action:'" + action + "'," +
+                "name:'" + jsString(name) + "'," +
+                "code:" + event.getKeyCode() + "," +
+                "repeat:" + event.getRepeatCount() + "," +
+                "device:'" + jsString(device) + "'" +
+                "}}));" +
+                "}catch(e){}})();";
+        webView.evaluateJavascript(js, null);
+    }
+
+    private float centeredAxis(MotionEvent event, int axis) {
+        InputDevice device = event.getDevice();
+        if (device == null) return 0f;
+        InputDevice.MotionRange range = device.getMotionRange(axis, event.getSource());
+        if (range == null) return 0f;
+        float value = event.getAxisValue(axis);
+        float flat = Math.max(STICK_DEADZONE, range.getFlat());
+        return Math.abs(value) <= flat ? 0f : clamp(value, -1f, 1f);
+    }
+
+    private float triggerAxis(MotionEvent event, int axis) {
+        InputDevice device = event.getDevice();
+        if (device == null) return 0f;
+        InputDevice.MotionRange range = device.getMotionRange(axis, event.getSource());
+        if (range == null) return 0f;
+        float raw = event.getAxisValue(axis);
+        float min = range.getMin();
+        float max = range.getMax();
+        float value;
+        if (max > min) value = (raw - min) / (max - min);
+        else value = raw;
+        return clamp(value, 0f, 1f);
+    }
+
+    private float dominant(float a, float b) {
+        return Math.abs(a) >= Math.abs(b) ? a : b;
+    }
+
+    private float clamp(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private String number(float value) {
+        return String.format(Locale.US, "%.4f", value);
+    }
+
+    private void emitGamepadAxes(MotionEvent event) {
+        if (webView == null) return;
+        long now = SystemClock.uptimeMillis();
+        if (now - lastAxisDispatchAt < AXIS_DISPATCH_INTERVAL_MS) return;
+        lastAxisDispatchAt = now;
+
+        float lx = centeredAxis(event, MotionEvent.AXIS_X);
+        float ly = centeredAxis(event, MotionEvent.AXIS_Y);
+
+        float rx = dominant(
+                centeredAxis(event, MotionEvent.AXIS_Z),
+                centeredAxis(event, MotionEvent.AXIS_RX)
+        );
+        float ry = dominant(
+                centeredAxis(event, MotionEvent.AXIS_RZ),
+                centeredAxis(event, MotionEvent.AXIS_RY)
+        );
+
+        float hatX = centeredAxis(event, MotionEvent.AXIS_HAT_X);
+        float hatY = centeredAxis(event, MotionEvent.AXIS_HAT_Y);
+
+        float lt = Math.max(
+                triggerAxis(event, MotionEvent.AXIS_LTRIGGER),
+                triggerAxis(event, MotionEvent.AXIS_BRAKE)
+        );
+        float rt = Math.max(
+                triggerAxis(event, MotionEvent.AXIS_RTRIGGER),
+                triggerAxis(event, MotionEvent.AXIS_GAS)
+        );
+
+        String device = controllerDeviceName(event.getDevice());
+        String js = "(function(){try{" +
+                "window.__TV_NATIVE_GAMEPAD__=true;" +
+                "window.__lastTVGamepadDevice='" + jsString(device) + "';" +
+                "window.dispatchEvent(new CustomEvent('tvgamepad',{detail:{" +
+                "kind:'axes'," +
+                "lx:" + number(lx) + "," +
+                "ly:" + number(ly) + "," +
+                "rx:" + number(rx) + "," +
+                "ry:" + number(ry) + "," +
+                "hatX:" + number(hatX) + "," +
+                "hatY:" + number(hatY) + "," +
+                "lt:" + number(lt) + "," +
+                "rt:" + number(rt) + "," +
+                "device:'" + jsString(device) + "'" +
+                "}}));" +
+                "}catch(e){}})();";
+        webView.evaluateJavascript(js, null);
+    }
+
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
@@ -230,7 +395,26 @@ public class MainActivity extends Activity {
                 return true;
             }
         }
+
+        if (isGameControllerSource(event.getSource())) {
+            emitGamepadButton(event);
+            if (isHomeVisible()) {
+                return true;
+            }
+        }
+
         return super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_MOVE && isGameControllerSource(event.getSource())) {
+            emitGamepadAxes(event);
+            if (isHomeVisible()) {
+                return true;
+            }
+        }
+        return super.onGenericMotionEvent(event);
     }
 
     @Override
