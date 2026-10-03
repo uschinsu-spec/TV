@@ -1,5 +1,5 @@
-const CACHE='xiaomi-tv-home-v6-5';
-const CORE=['./','./index.html','./style.css?v=6.5','./app.js?v=6.5','./media.js?v=6.5','./games.js?v=6.5','./input.js?v=6.5','./manifest.webmanifest'];
+const CACHE='xiaomi-tv-home-v6-6';
+const CORE=['./','./index.html','./style.css?v=6.6','./app.js?v=6.6','./media.js?v=6.6','./games.js?v=6.6','./input.js?v=6.6','./manifest.webmanifest'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});
 self.addEventListener('fetch',e=>{

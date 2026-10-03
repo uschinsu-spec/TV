@@ -184,25 +184,24 @@ function normalizedState(){
 
 function pollBrowserGamepad(){
   const gp=activeBrowserPad();
-  if(gp&&!nativeRecent()){
+  if(gp&&!nativeRecent()&&!gameActive()){
     browserPad=gp.id||browserPad;
     setStatus(browserPad,'BROWSER FALLBACK');
     const snap=browserSnapshot(gp);
-    if(!gameActive()){
-      handleAxes(snap);
-      const buttons=gp.buttons||[];
-      for(let i=0;i<buttons.length;i++){
-        const down=!!buttons[i]?.pressed;
-        if(down!==!!browserPressed[i]){
-          browserPressed[i]=down;
-          handleButton(standardNames[i]||('BUTTON_'+(i+1)),down,{source:'browser'});
-        }
+    handleAxes(snap);
+    const buttons=gp.buttons||[];
+    for(let i=0;i<buttons.length;i++){
+      const down=!!buttons[i]?.pressed;
+      if(down!==!!browserPressed[i]){
+        browserPressed[i]=down;
+        handleButton(standardNames[i]||('BUTTON_'+(i+1)),down,{source:'browser'});
       }
     }
   }
-  requestAnimationFrame(pollBrowserGamepad);
+  // Menus do not need 60 FPS input scanning. 100 ms is responsive enough for TV navigation.
+  setTimeout(pollBrowserGamepad,gameActive()?250:(gp?100:350));
 }
-requestAnimationFrame(pollBrowserGamepad);
+setTimeout(pollBrowserGamepad,150);
 
 window.TVInput={
   get native(){return nativeRecent()},

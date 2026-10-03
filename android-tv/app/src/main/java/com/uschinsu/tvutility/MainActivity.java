@@ -28,28 +28,10 @@ public class MainActivity extends Activity {
     private static final float STICK_DEADZONE = 0.16f;
     private static final long AXIS_DISPATCH_INTERVAL_MS = 20L;
 
-    private static final String JS_CLEAR_SITE_CACHE =
-            "(async function(){" +
-            "try{" +
-            " if('caches' in window){" +
-            "   const keys=await caches.keys();" +
-            "   await Promise.all(keys.map(function(k){return caches.delete(k);}));" +
-            " }" +
-            "}catch(e){}" +
-            "try{" +
-            " if('serviceWorker' in navigator){" +
-            "   const regs=await navigator.serviceWorker.getRegistrations();" +
-            "   await Promise.all(regs.map(function(r){return r.unregister();}));" +
-            " }" +
-            "}catch(e){}" +
-            "return 'done';" +
-            "})();";
-
     private FrameLayout root;
     private WebView webView;
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
-    private boolean freshnessReloadDone = false;
     private long lastAxisDispatchAt = 0L;
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -92,15 +74,13 @@ public class MainActivity extends Activity {
         settings.setSupportZoom(false);
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
         settings.setSupportMultipleWindows(true);
-        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
 
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
         CookieManager.setAcceptFileSchemeCookies(false);
         cookieManager.setAcceptThirdPartyCookies(webView, true);
-
-        clearOldWebViewCache();
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -117,22 +97,12 @@ public class MainActivity extends Activity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-
-                if (!freshnessReloadDone && isHomeOrigin(url)) {
-                    freshnessReloadDone = true;
-                    view.evaluateJavascript(JS_CLEAR_SITE_CACHE, value -> {
-                        if (webView == null) return;
-                        webView.clearCache(true);
-                        webView.loadUrl(buildFreshHomeUrl());
-                    });
-                    return;
-                }
-
                 view.setVisibility(View.VISIBLE);
                 view.requestFocus(View.FOCUS_DOWN);
                 view.evaluateJavascript(
                         "(function(){try{" +
                         "window.__TV_NATIVE_GAMEPAD__=true;" +
+                        "window.__TV_NATIVE_APP_VERSION__='1.6';" +
                         "document.documentElement.setAttribute('tabindex','-1');" +
                         "document.documentElement.focus();" +
                         "}catch(e){}})();",
@@ -183,8 +153,8 @@ public class MainActivity extends Activity {
     }
 
     private String buildFreshHomeUrl() {
-        String separator = HOME_URL.contains("?") ? "&" : "?";
-        return HOME_URL + separator + "_tvapp_fresh=" + System.currentTimeMillis();
+        // One network navigation only. Web assets are versioned and the Service Worker is network-first.
+        return HOME_URL + "?_tvapp=1.6";
     }
 
     private boolean isHomeOrigin(String url) {
@@ -193,17 +163,6 @@ public class MainActivity extends Activity {
 
     private boolean isHomeVisible() {
         return webView != null && isHomeOrigin(webView.getUrl());
-    }
-
-    private void clearOldWebViewCache() {
-        if (webView == null) return;
-        try {
-            webView.stopLoading();
-            webView.clearCache(true);
-            webView.clearHistory();
-            webView.clearFormData();
-        } catch (Exception ignored) {
-        }
     }
 
     private void enterImmersiveMode() {
@@ -245,6 +204,7 @@ public class MainActivity extends Activity {
             case KeyEvent.KEYCODE_ENTER:
             case KeyEvent.KEYCODE_NUMPAD_ENTER:
             case KeyEvent.KEYCODE_SPACE:
+            case KeyEvent.KEYCODE_BACK:
                 return true;
             default:
                 return false;
@@ -348,7 +308,9 @@ public class MainActivity extends Activity {
     private void emitInputButton(KeyEvent event, boolean forceRemote) {
         if (webView == null) return;
         String action = event.getAction() == KeyEvent.ACTION_DOWN ? "down" : "up";
-        String name = controllerButtonName(event.getKeyCode());
+        String name = forceRemote && event.getKeyCode() == KeyEvent.KEYCODE_BACK
+                ? "B"
+                : controllerButtonName(event.getKeyCode());
         String device = controllerDeviceName(event.getDevice());
         String source = forceRemote ? "remote" : "gamepad";
         String domKey = fallbackDomKey(name);
@@ -463,20 +425,33 @@ public class MainActivity extends Activity {
     public boolean dispatchKeyEvent(KeyEvent event) {
         int keyCode = event.getKeyCode();
 
-        if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_BACK) {
-            if (customView != null) {
-                hideCustomView();
-                return true;
-            }
-            if (webView != null && webView.canGoBack()) {
-                webView.goBack();
+        // Fullscreen media keeps Android Back for closing the fullscreen surface.
+        if (event.getAction() == KeyEvent.ACTION_DOWN &&
+                keyCode == KeyEvent.KEYCODE_BACK &&
+                customView != null) {
+            hideCustomView();
+            return true;
+        }
+
+        // Keep the F710/native gamepad path that already works.
+        if (isGameControllerSource(event.getSource())) {
+            emitInputButton(event, false);
+            if (isHomeVisible()) {
                 return true;
             }
         }
 
-        if (isGameControllerSource(event.getSource())) {
-            emitInputButton(event, false);
-            if (isHomeVisible()) {
+        // Xiaomi/Android TV remotes are normally SOURCE_DPAD/keyboard.
+        // Forward D-pad, OK/Enter and Back to the same JS input bridge.
+        if (isHomeVisible() && isHomeNavigationKey(keyCode)) {
+            emitInputButton(event, true);
+            return true;
+        }
+
+        // Normal Android history behavior only outside the TV Home origin.
+        if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_BACK) {
+            if (webView != null && webView.canGoBack()) {
+                webView.goBack();
                 return true;
             }
         }
@@ -522,7 +497,6 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         if (webView != null) {
-            clearOldWebViewCache();
             webView.loadUrl("about:blank");
             webView.stopLoading();
             webView.setWebChromeClient(null);
