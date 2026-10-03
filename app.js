@@ -1,4 +1,4 @@
-const VERSION='6.4.0';
+const VERSION='6.5.0';
 const $=id=>document.getElementById(id);
 const els={clock:$('clock'),today:$('today'),greeting:$('greeting'),networkDot:$('networkDot'),networkText:$('networkText'),gamepadStatus:$('gamepadStatus'),panel:$('appPanel'),panelTitle:$('panelTitle'),panelEyebrow:$('panelEyebrow'),panelBody:$('panelBody'),panelClock:$('panelClock'),backBtn:$('backBtn'),toast:$('toast'),fullscreenBtn:$('fullscreenBtn'),wakeBtn:$('wakeBtn'),wakeState:$('wakeState'),reloadBtn:$('reloadBtn')};
 let currentApp='',lastFocused=null,wakeLock=null,lastPadNav=0,padPrev={a:false,b:false,start:false,up:false,down:false,left:false,right:false};
@@ -18,17 +18,11 @@ function firstPad(){const list=navigator.getGamepads?navigator.getGamepads():[];
 function padSnapshot(p){if(!p)return null;const ax=p.axes||[],btn=p.buttons||[],x=Math.abs(ax[0]||0)>.45?(ax[0]||0):0,y=Math.abs(ax[1]||0)>.45?(ax[1]||0):0;return{a:!!btn[0]?.pressed,b:!!btn[1]?.pressed,start:!!btn[9]?.pressed,up:!!btn[12]?.pressed||y<-.5,down:!!btn[13]?.pressed||y>.5,left:!!btn[14]?.pressed||x<-.5,right:!!btn[15]?.pressed||x>.5}}
 function pollGamepadUI(){
   const p=firstPad();
-  if(p){els.gamepadStatus.textContent='🎮 '+(p.id||'Gamepad');els.gamepadStatus.classList.add('connected')}else{els.gamepadStatus.textContent='🎮 Chưa thấy tay cầm';els.gamepadStatus.classList.remove('connected')}
-  if(!window.__TV_NATIVE_GAMEPAD__&&!window.tvGameActive&&p){
-    if(window.tvGameInputLockUntil&&performance.now()<window.tvGameInputLockUntil){padPrev=padSnapshot(p);requestAnimationFrame(pollGamepadUI);return}
-    const s=padSnapshot(p),now=performance.now();
-    const dirs=['up','down','left','right'];
-    for(const d of dirs)if(s[d]&&!padPrev[d]&&now-lastPadNav>90){move(d);lastPadNav=now}
-    if(s.a&&!padPrev.a){document.activeElement?.click?.()}
-    if(s.start&&!padPrev.start){document.activeElement?.click?.()}
-    if(s.b&&!padPrev.b&&els.panel.classList.contains('open'))closeApp();
-    padPrev=s;
-  }else if(!p){padPrev={a:false,b:false,start:false,up:false,down:false,left:false,right:false}}
+  const nativeFresh=window.TVInput?.native;
+  if(!nativeFresh){
+    if(p){els.gamepadStatus.textContent='🎮 '+(p.id||'Gamepad');els.gamepadStatus.classList.add('connected')}
+    else if(!window.__lastTVGamepadDevice){els.gamepadStatus.textContent='🎮 Chưa thấy tay cầm';els.gamepadStatus.classList.remove('connected')}
+  }
   requestAnimationFrame(pollGamepadUI);
 }
 document.querySelectorAll('[data-app]').forEach(b=>b.addEventListener('click',()=>openApp(b.dataset.app,b)));

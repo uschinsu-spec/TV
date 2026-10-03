@@ -30,9 +30,15 @@ function exitGame(){window.tvGameInputLockUntil=performance.now()+550;cleanup();
 function setupCanvas(w=960,h=540){const stage=$('gameStage');stage.innerHTML='<canvas id="gameCanvas" width="'+w+'" height="'+h+'"></canvas>';canvas=$('gameCanvas');ctx=canvas.getContext('2d');return canvas}
 function firstPad(){const list=navigator.getGamepads?navigator.getGamepads():[];for(const p of list)if(p&&p.connected)return p;return null}
 function readPad(){
-  const p=firstPad();if(!p)return{x:0,y:0,a:false,b:false,start:false,aEdge:false,bEdge:false,startEdge:false,upEdge:false,downEdge:false,leftEdge:false,rightEdge:false};
-  const ax=p.axes||[],btn=p.buttons||[],rawX=Math.abs(ax[0]||0)>.22?(ax[0]||0):0,rawY=Math.abs(ax[1]||0)>.22?(ax[1]||0):0;
-  const s={x:rawX,y:rawY,a:!!btn[0]?.pressed,b:!!btn[1]?.pressed,start:!!btn[9]?.pressed,up:!!btn[12]?.pressed||rawY<-.55,down:!!btn[13]?.pressed||rawY>.55,left:!!btn[14]?.pressed||rawX<-.55,right:!!btn[15]?.pressed||rawX>.55};
+  const bridge=window.TVInput?.readGamepadState?.();
+  let s;
+  if(bridge){
+    s={x:Number(bridge.x)||0,y:Number(bridge.y)||0,a:!!bridge.a,b:!!bridge.b,start:!!bridge.start,up:!!bridge.up,down:!!bridge.down,left:!!bridge.left,right:!!bridge.right};
+  }else{
+    const p=firstPad();if(!p)return{x:0,y:0,a:false,b:false,start:false,aEdge:false,bEdge:false,startEdge:false,upEdge:false,downEdge:false,leftEdge:false,rightEdge:false};
+    const ax=p.axes||[],btn=p.buttons||[],rawX=Math.abs(ax[0]||0)>.22?(ax[0]||0):0,rawY=Math.abs(ax[1]||0)>.22?(ax[1]||0):0;
+    s={x:rawX,y:rawY,a:!!btn[0]?.pressed,b:!!btn[1]?.pressed,start:!!btn[9]?.pressed,up:!!btn[12]?.pressed||rawY<-.55,down:!!btn[13]?.pressed||rawY>.55,left:!!btn[14]?.pressed||rawX<-.55,right:!!btn[15]?.pressed||rawX>.55};
+  }
   s.aEdge=s.a&&!padPrev.a;s.bEdge=s.b&&!padPrev.b;s.startEdge=s.start&&!padPrev.start;s.upEdge=s.up&&!padPrev.up;s.downEdge=s.down&&!padPrev.down;s.leftEdge=s.left&&!padPrev.left;s.rightEdge=s.right&&!padPrev.right;padPrev=s;return s;
 }
 function input(){
