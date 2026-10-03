@@ -27,7 +27,7 @@ window.renderGameApp=function(){
 };
 function cleanup(){cancelAnimationFrame(raf);raf=0;last=0;paused=false;keys.clear();pressed.clear();state=null;window.tvGameActive=false}
 window.stopActiveGame=cleanup;
-function exitGame(){window.tvGameInputLockUntil=performance.now()+550;cleanup();const st=$('gameStage');if(st)st.innerHTML='<div class="status">Đã thoát game. Chọn game khác phía trên.</div>';const gs=$('gameState');if(gs)gs.textContent='Đã thoát game';setTimeout(()=>document.querySelector('[data-game="'+game+'"]')?.focus(),20)}
+function exitGame(){window.tvGameInputLockUntil=performance.now()+550;cleanup();document.body.classList.remove('game-running');document.getElementById('appPanel')?.classList.remove('game-running');const st=$('gameStage');if(st)st.innerHTML='<div class="status">Chọn một game để bắt đầu.</div>';const gs=$('gameState');if(gs)gs.textContent='Chọn game';setTimeout(()=>document.querySelector('[data-game="'+game+'"]')?.focus(),40)}
 function setupCanvas(w=960,h=540){const stage=$('gameStage');stage.innerHTML='<canvas id="gameCanvas" width="'+w+'" height="'+h+'"></canvas>';canvas=$('gameCanvas');ctx=canvas.getContext('2d');return canvas}
 function firstPad(){const list=navigator.getGamepads?navigator.getGamepads():[];for(const p of list)if(p&&p.connected)return p;return null}
 function cleanAxis(v,dz=.18){
@@ -57,10 +57,11 @@ function input(){
 function bg(){ctx.fillStyle='#050b12';ctx.fillRect(0,0,canvas.width,canvas.height)}
 function text(msg,x,y,size=24,align='left'){ctx.fillStyle='#eef5ff';ctx.font='700 '+size+'px Arial';ctx.textAlign=align;ctx.fillText(msg,x,y)}
 function loop(update,draw){
-  function frame(t){if(!window.tvGameActive)return;const dt=Math.min(.04,(t-last)/1000||.016);last=t;const c=input();if(c.bEdge){exitGame();return}if(c.startEdge){paused=!paused;$('gameState').textContent=paused?'Tạm dừng':'Đang chơi'}if(!paused)update(dt,c);draw(c);raf=requestAnimationFrame(frame)}raf=requestAnimationFrame(frame)
+  const minFrameMs=1000/30;
+  function frame(t){if(!window.tvGameActive)return;if(last&&t-last<minFrameMs){raf=requestAnimationFrame(frame);return}const dt=Math.min(.05,(t-last)/1000||.033);last=t;const c=input();if(c.bEdge){exitGame();return}if(c.startEdge){paused=!paused;$('gameState').textContent=paused?'Tạm dừng':'Đang chơi'}if(!paused)update(dt,c);draw(c);raf=requestAnimationFrame(frame)}raf=requestAnimationFrame(frame)
 }
 function cycleGameNative(delta){const i=Math.max(0,GAMES.findIndex(g=>g[0]===game));startGame(GAMES[(i+delta+GAMES.length)%GAMES.length][0])}
-function startGame(name){cleanup();game=name;window.tvGameActive=true;padPrev={};$('gameState').textContent='Đang chơi '+(GAMES.find(g=>g[0]===name)?.[1]||name);$('gameScore').textContent='Điểm: 0';({snake:startSnake,pong:startPong,breakout:startBreakout,shooter:startShooter,racer:startRacer,flappy:startFlappy,asteroids:startAsteroids,catcher:startCatcher,'2048':start2048,reaction:startReaction}[name])?.()}
+function startGame(name){cleanup();game=name;window.tvGameActive=true;padPrev={};document.body.classList.add('game-running');document.getElementById('appPanel')?.classList.add('game-running');window.requestTVFullscreen?.();$('gameState').textContent=(GAMES.find(g=>g[0]===name)?.[1]||name)+' · B/Back để chọn game khác';$('gameScore').textContent='Điểm: 0';({snake:startSnake,pong:startPong,breakout:startBreakout,shooter:startShooter,racer:startRacer,flappy:startFlappy,asteroids:startAsteroids,catcher:startCatcher,'2048':start2048,reaction:startReaction}[name])?.()}
 
 function startSnake(){
   setupCanvas();const cell=24,cols=40,rows=22;state={body:[{x:10,y:10},{x:9,y:10},{x:8,y:10}],dir:{x:1,y:0},next:{x:1,y:0},food:{x:22,y:10},acc:0,score:0,over:false};

@@ -1,24 +1,24 @@
-# Xiaomi TV Home V6.6 + Android TV APK 1.6
+# Xiaomi TV Home V7.0 + Android TV APK 1.7
 
-Trang chính vẫn chỉ có **Xem TV**, **YouTube** và **Game Center**.
+TV Home dành riêng cho Android TV theo kiểu **10-foot UI**: chữ lớn, card lớn, focus rõ, điều khiển bằng remote/gamepad và không cần thao tác kéo chuột kiểu PC.
 
-## APK 1.6
-- Native bridge cho remote Xiaomi/Android TV: D-pad, OK/Enter và Back.
-- Giữ nguyên native bridge cho Logitech F710/gamepad.
-- Chỉ tải TV Home **một lần khi mở app**.
-- Không còn xóa WebView cache, Cache Storage và unregister Service Worker mỗi lần khởi động.
-- WebView dùng cache mặc định; web tự cập nhật nhờ asset version + Service Worker network-first.
-- Không còn reload lần hai sau `onPageFinished()`.
+## Web V7.0
+- Home TV-first với 3 mục chính: **Xem TV**, **YouTube**, **Game Center**.
+- **TV Mode** mặc định bật: ưu tiên D-pad / OK / Back.
+- **Tự động toàn màn hình** khi mở ứng dụng.
+- Xem TV và YouTube theo bố cục video-first, hạn chế cuộn trang.
+- Khi chọn một game, game mở thành màn hình toàn phần; B/Back quay về danh sách game.
+- Game loop giới hạn khoảng 30 FPS để giảm tải cho Android TV.
+- Cache Service Worker dùng namespace V7.0 để tránh giữ giao diện 6.x cũ.
 
-## Tối ưu web V6.6
-- Bỏ vòng `requestAnimationFrame` 60 FPS chỉ để hiển thị trạng thái gamepad ở menu.
-- Browser Gamepad fallback ở menu chỉ kiểm tra khoảng 8–10 lần/giây khi tay cầm đang kết nối, chậm hơn khi chưa có tay cầm.
-- Khi chơi game, game loop mới đọc input theo frame để giữ độ phản hồi.
-
-## Điều khiển
-- Remote: D-pad → di chuyển, OK → chọn, Back → quay lại.
-- F710: D-pad/analog → di chuyển, A → chọn/hành động, B → quay lại, Start → pause trong game.
+## APK 1.7
+- Giữ native bridge cho remote Xiaomi/Android TV.
+- Giữ native game mode tối ưu cho Logitech F710.
+- D-pad/analog → di chuyển.
+- A/OK → chọn/hành động.
+- B/Back → quay lại.
+- Start → tạm dừng trong game.
 
 Mở web: https://uschinsu-spec.github.io/TV/
 
-APK artifact: `TVUtility-AndroidTV-v1.6.apk`
+APK artifact: `TVUtility-AndroidTV-v1.7.apk`
