@@ -36,6 +36,7 @@ public class MainActivity extends Activity {
     private long lastAxisDispatchAt = 0L;
     private int lastAxisDeviceId = -1;
     private boolean hasLastAxes = false;
+    private boolean nativeTvFullscreen = false;
     private float lastLx, lastLy, lastRx, lastRy, lastHatX, lastHatY, lastLt, lastRt;
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -98,6 +99,13 @@ public class MainActivity extends Activity {
                     });
                     return true;
                 }
+                if (url.startsWith("tvnative://tvfullscreen")) {
+                    runOnUiThread(() -> {
+                        if (nativeTvFullscreen) exitNativeTvFullscreen();
+                        else enterNativeTvFullscreen();
+                    });
+                    return true;
+                }
                 return false;
             }
 
@@ -116,6 +124,7 @@ public class MainActivity extends Activity {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
+                nativeTvFullscreen = false;
                 enterImmersiveMode();
             }
 
@@ -127,7 +136,7 @@ public class MainActivity extends Activity {
                 view.evaluateJavascript(
                         "(function(){try{" +
                         "window.__TV_NATIVE_GAMEPAD__=true;" +
-                        "window.__TV_NATIVE_APP_VERSION__='1.9';" +
+                        "window.__TV_NATIVE_APP_VERSION__='2.0';" +
                         "document.documentElement.setAttribute('tabindex','-1');" +
                         "document.documentElement.focus();" +
 
@@ -150,13 +159,7 @@ public class MainActivity extends Activity {
                         " var b=document.createElement('button');" +
                         " b.id='nativeTvFullscreenBtn';b.className='btn compact focusable';" +
                         " b.textContent='⛶ Toàn màn hình TV';" +
-                        " b.addEventListener('click',function(){" +
-                        "  try{" +
-                        "   if(v.requestFullscreen){var p=v.requestFullscreen();if(p&&p.catch)p.catch(function(){});}" +
-                        "   else if(v.webkitEnterFullscreen)v.webkitEnterFullscreen();" +
-                        "   else if(v.webkitRequestFullscreen)v.webkitRequestFullscreen();" +
-                        "  }catch(e){}" +
-                        " });" +
+                        " b.addEventListener('click',function(){location.href='tvnative://tvfullscreen';});" +
                         " var adv=document.getElementById('tvAdvancedToggle');" +
                         " if(adv&&adv.parentNode===row)row.insertBefore(b,adv);else row.appendChild(b);" +
                         "}" +
@@ -241,6 +244,47 @@ public class MainActivity extends Activity {
                 View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE
         );
+    }
+
+    private void enterNativeTvFullscreen() {
+        if (webView == null || nativeTvFullscreen) return;
+        nativeTvFullscreen = true;
+        enterImmersiveMode();
+        webView.evaluateJavascript(
+                "(function(){try{" +
+                "var v=document.getElementById('tvVideo');if(!v)return;" +
+                "var s=document.getElementById('__tvNativeFullscreenStyle');" +
+                "if(!s){s=document.createElement('style');s.id='__tvNativeFullscreenStyle';" +
+                "s.textContent='body.__tv-native-tvfs{overflow:hidden!important;background:#000!important}' +" +
+                "'body.__tv-native-tvfs #tvVideo{position:fixed!important;left:0!important;top:0!important;right:0!important;bottom:0!important;" +
+                "width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;" +
+                "margin:0!important;padding:0!important;border:0!important;border-radius:0!important;" +
+                "z-index:2147483647!important;background:#000!important;object-fit:contain!important;}' ;" +
+                "document.head.appendChild(s);}" +
+                "document.body.classList.add('__tv-native-tvfs');" +
+                "window.__tvNativeVideoFullscreen=true;" +
+                "var b=document.getElementById('nativeTvFullscreenBtn');if(b)b.textContent='↩ Thoát toàn màn hình';" +
+                "v.setAttribute('tabindex','0');v.focus();" +
+                "}catch(e){}})();",
+                null
+        );
+    }
+
+    private void exitNativeTvFullscreen() {
+        if (webView == null || !nativeTvFullscreen) return;
+        nativeTvFullscreen = false;
+        webView.evaluateJavascript(
+                "(function(){try{" +
+                "document.body.classList.remove('__tv-native-tvfs');" +
+                "window.__tvNativeVideoFullscreen=false;" +
+                "var b=document.getElementById('nativeTvFullscreenBtn');if(b)b.textContent='⛶ Toàn màn hình TV';" +
+                "var v=document.getElementById('tvVideo');if(v)v.blur();" +
+                "var a=document.querySelector('.channel-btn.active');if(a&&a.focus)a.focus();" +
+                "}catch(e){}})();",
+                null
+        );
+        webView.requestFocus(View.FOCUS_DOWN);
+        enterImmersiveMode();
     }
 
     private void hideCustomView() {
@@ -539,6 +583,13 @@ public class MainActivity extends Activity {
     public boolean dispatchKeyEvent(KeyEvent event) {
         int keyCode = event.getKeyCode();
 
+        if (event.getAction() == KeyEvent.ACTION_DOWN &&
+                nativeTvFullscreen &&
+                (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_BUTTON_B)) {
+            exitNativeTvFullscreen();
+            return true;
+        }
+
         // Fullscreen media keeps Android Back for closing the fullscreen surface.
         if (event.getAction() == KeyEvent.ACTION_DOWN &&
                 keyCode == KeyEvent.KEYCODE_BACK &&
@@ -606,6 +657,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        nativeTvFullscreen = false;
         if (webView != null) {
             webView.loadUrl("about:blank");
             webView.stopLoading();
