@@ -1,5 +1,5 @@
-const CACHE='xiaomi-tv-hub-v2-1';
-const CORE=['./','./index.html','./style.css','./app.js','./manifest.webmanifest'];
+const CACHE='xiaomi-tv-hub-v3';
+const CORE=['./','./index.html','./style.css','./app.js','./tools.js','./manifest.webmanifest'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)));
