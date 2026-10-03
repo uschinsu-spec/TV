@@ -1,0 +1,26 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.uschinsu.tvutility'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.uschinsu.tvutility'
+        minSdk 21
+        targetSdk 35
+        versionCode 3
+        versionName '1.2.0'
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
