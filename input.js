@@ -18,6 +18,7 @@ const nativeState={
 };
 let lastRightScroll=0;
 let browserPad='';
+let lastStatusText='';
 let prevLT=false,prevRT=false;
 
 function now(){return performance.now()}
@@ -34,7 +35,8 @@ function dominant(a,b){return Math.abs(a)>=Math.abs(b)?a:b}
 
 function setStatus(label,action){
   const el=document.getElementById('gamepadStatus');if(!el)return;
-  el.textContent='🎮 '+label+(action?' · '+action:'');
+  const text='🎮 '+label+(action?' · '+action:'');
+  if(text!==lastStatusText){el.textContent=text;lastStatusText=text}
   el.classList.add('connected');
 }
 function noteNative(d){
@@ -183,8 +185,9 @@ function normalizedState(){
 }
 
 function pollBrowserGamepad(){
-  const gp=activeBrowserPad();
-  if(gp&&!nativeRecent()){
+  const recent=nativeRecent();
+  const gp=recent?null:activeBrowserPad();
+  if(gp){
     browserPad=gp.id||browserPad;
     setStatus(browserPad,'BROWSER FALLBACK');
     const snap=browserSnapshot(gp);
@@ -200,9 +203,11 @@ function pollBrowserGamepad(){
       }
     }
   }
-  requestAnimationFrame(pollBrowserGamepad);
+  // Menus do not need 60 Hz polling. Active games read TVInput directly in their own frame loop.
+  const delay=recent||gameActive()?140:(gp?60:100);
+  setTimeout(pollBrowserGamepad,delay);
 }
-requestAnimationFrame(pollBrowserGamepad);
+setTimeout(pollBrowserGamepad,80);
 
 window.TVInput={
   get native(){return nativeRecent()},
