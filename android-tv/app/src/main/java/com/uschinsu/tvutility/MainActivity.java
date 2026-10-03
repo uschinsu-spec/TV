@@ -153,8 +153,8 @@ public class MainActivity extends Activity {
     }
 
     private String buildFreshHomeUrl() {
-        // One network navigation only. Web assets are versioned and the Service Worker is network-first.
-        return HOME_URL + "?_tvapp=1.7";
+        // Keep APK independent from web releases: V7, V8, V9... all use the same root URL.
+        return HOME_URL;
     }
 
     private boolean isHomeOrigin(String url) {
