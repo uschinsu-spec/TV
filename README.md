@@ -1,4 +1,4 @@
-# Xiaomi TV Home V6
+# Xiaomi TV Home V6.6
 
 Trang chính chỉ có 3 mục: **Xem TV**, **YouTube**, **Game Center**.
 
@@ -30,4 +30,14 @@ Bàn phím/remote vẫn hoạt động song song.
 
 Mở: https://uschinsu-spec.github.io/TV/
 
-Cache: `xiaomi-tv-home-v6`.
+Cache: `xiaomi-tv-home-v6-6`.
+
+
+## Android TV 1.6
+- Không xóa toàn bộ WebView/Service Worker cache ở mỗi lần mở app.
+- Không tải trang hai lần khi khởi động.
+- Remote D-pad được bridge riêng, không phụ thuộc hành vi focus mặc định của WebView.
+- Gamepad menu được polling theo nhịp thấp thay vì requestAnimationFrame 60 Hz.
+- Game canvas nhẹ được giới hạn 30 FPS để giảm CPU/GPU và nhiệt.
+- Tắt các hiệu ứng blur/ambient nặng khi chạy trong Android TV wrapper.
+- HLS giảm back-buffer để giảm RAM khi xem truyền hình lâu.
