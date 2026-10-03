@@ -1,34 +1,41 @@
-# Xiaomi TV Hub V2.1 — V1 Compatible
+# Xiaomi TV Hub V3
 
-Trang web TV giữ **toàn bộ luồng V1** và cộng thêm các tiện ích V2.
+TV Hub tối ưu cho Xiaomi Android TV, giữ launcher V1/V2 và bổ sung **12 tiện ích chạy trực tiếp trong trang**.
 
 **Mở trên TV:** https://uschinsu-spec.github.io/TV/
 
-## Các chức năng V1 được giữ nguyên
+## 12 tiện ích trực tiếp
 
-- Thanh **Mở trang** riêng: nhập URL → Mở trang.
-- 8 ô mặc định V1 theo đúng thứ tự: YouTube, Google, Speedtest, Trang TV của tôi, Tin tức, Nhạc, Trang web 1, Trang web 2.
-- Đồng hồ, ngày tháng và trạng thái Internet.
-- Nút **Toàn màn hình**, **Tải lại**, **Cài đặt ô**.
-- Chỉnh icon / tên / URL và lưu bằng localStorage.
-- Điều khiển remote D-pad + OK/Enter + Back/Escape.
-- Tự đọc lại dữ liệu `tvUtilityTilesV1` cũ nếu TV đã từng dùng V1.
+1. Timer — đếm ngược và báo âm thanh.
+2. Stopwatch — bấm giờ.
+3. Máy tính — điều khiển bằng remote.
+4. Lịch — xem và chuyển tháng.
+5. Ghi chú — lưu localStorage trên TV.
+6. Video Player — file từ bộ nhớ/USB hoặc URL video.
+7. Music Player — file audio hoặc URL.
+8. IPTV Player — stream URL, file/nội dung M3U và danh sách kênh.
+9. Test mạng — online, connection API, RTT/downlink và phản hồi GitHub Pages.
+10. Test màn hình — màu đơn, gradient, checkerboard toàn màn hình.
+11. Test loa — tone trái/phải/cả hai bằng Web Audio.
+12. Test remote — xem key, keyCode và code của remote Xiaomi.
 
-## Tính năng thêm của V2.1
+Các tiện ích này mở trong chính TV Hub, không chuyển sang website khác.
 
-- 4 launcher mở rộng, tổng 12 ô.
-- Thanh tìm Google riêng, không thay thế thanh mở URL của V1.
-- Wake Lock giữ màn hình sáng nếu browser hỗ trợ.
-- Chế độ nhẹ giảm blur/animation.
-- Chế độ UI lớn.
-- Screensaver đồng hồ 5 / 8 / 15 phút.
-- Thông tin thiết bị, độ phân giải, CPU/RAM khi browser cung cấp.
-- PWA install khi browser hỗ trợ.
-- Safe-area cho overscan TV.
-- Offline cache V2.1.
+## V1/V2 vẫn giữ
+
+- 12 ô launcher tùy biến.
+- Thanh mở URL riêng và tìm Google.
+- Đồng hồ, ngày, trạng thái mạng.
+- Fullscreen, Reload, cài đặt ô.
+- Wake Lock, chế độ nhẹ, UI lớn, screensaver, thông tin thiết bị và PWA khi browser hỗ trợ.
+- Điều khiển D-pad + OK/Enter + Back/Escape.
+
+## Lưu ý IPTV
+
+TV Hub phát HLS/M3U8 bằng khả năng media native của browser/firmware. Nếu browser Xiaomi cụ thể không hỗ trợ HLS native, stream đó có thể không phát dù URL đúng.
 
 ## GitHub Pages
 
-Bật **Settings → Pages → Deploy from a branch → main → /(root)**.
+Settings → Pages → Deploy from a branch → main → /(root).
 
-Nếu TV còn hiện bản cũ, tải lại trang một lần để Service Worker đổi sang cache `xiaomi-tv-hub-v2-1`.
+Cache hiện tại: xiaomi-tv-hub-v3.
