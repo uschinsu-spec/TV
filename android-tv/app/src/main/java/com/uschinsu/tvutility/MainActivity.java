@@ -413,6 +413,30 @@ public class MainActivity extends Activity {
         webView.evaluateJavascript(js, null);
     }
 
+    private void handleHomeBack() {
+        if (webView == null) {
+            finish();
+            return;
+        }
+        String js = "(function(){try{" +
+                "if(window.tvGameActive){" +
+                " document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',code:'Escape',bubbles:true,cancelable:true}));" +
+                " return 'handled';" +
+                "}" +
+                "var p=document.getElementById('appPanel');" +
+                "if(p&&p.classList.contains('open')){" +
+                " var b=document.getElementById('backBtn');if(b)b.click();" +
+                " return 'handled';" +
+                "}" +
+                "return 'exit';" +
+                "}catch(e){return 'exit';}})();";
+        webView.evaluateJavascript(js, value -> {
+            if ("\"exit\"".equals(value)) {
+                runOnUiThread(this::finish);
+            }
+        });
+    }
+
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         int keyCode = event.getKeyCode();
@@ -420,6 +444,10 @@ public class MainActivity extends Activity {
         if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_BACK) {
             if (customView != null) {
                 hideCustomView();
+                return true;
+            }
+            if (isHomeVisible()) {
+                handleHomeBack();
                 return true;
             }
             if (webView != null && webView.canGoBack()) {
