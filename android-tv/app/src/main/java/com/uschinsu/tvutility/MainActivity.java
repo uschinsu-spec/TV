@@ -85,9 +85,32 @@ public class MainActivity extends Activity {
         cookieManager.setAcceptThirdPartyCookies(webView, true);
 
         webView.setWebViewClient(new WebViewClient() {
+            private boolean handleNativeCommand(String url) {
+                if (url == null) return false;
+                if (url.startsWith("tvnative://exit")) {
+                    runOnUiThread(() -> {
+                        try {
+                            if (android.os.Build.VERSION.SDK_INT >= 21) finishAndRemoveTask();
+                            else finish();
+                        } catch (Exception ignored) {
+                            finish();
+                        }
+                    });
+                    return true;
+                }
+                return false;
+            }
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return false;
+                String url = request != null && request.getUrl() != null ? request.getUrl().toString() : null;
+                return handleNativeCommand(url);
+            }
+
+            @SuppressWarnings("deprecation")
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                return handleNativeCommand(url);
             }
 
             @Override
@@ -104,9 +127,65 @@ public class MainActivity extends Activity {
                 view.evaluateJavascript(
                         "(function(){try{" +
                         "window.__TV_NATIVE_GAMEPAD__=true;" +
-                        "window.__TV_NATIVE_APP_VERSION__='1.8';" +
+                        "window.__TV_NATIVE_APP_VERSION__='1.9';" +
                         "document.documentElement.setAttribute('tabindex','-1');" +
                         "document.documentElement.focus();" +
+
+                        // Add native Exit button to the existing bottom quick-actions row.
+                        "function installExit(){" +
+                        " var host=document.querySelector('.quick-buttons');" +
+                        " if(!host||document.getElementById('nativeExitAppBtn'))return;" +
+                        " var b=document.createElement('button');" +
+                        " b.id='nativeExitAppBtn';b.className='sys-btn focusable';" +
+                        " b.innerHTML='⏻ <span>Thoát APP</span>';" +
+                        " b.addEventListener('click',function(){location.href='tvnative://exit';});" +
+                        " host.appendChild(b);" +
+                        "}" +
+
+                        // Add a TV-video fullscreen button whenever #tvVideo is created by the web app.
+                        "function installTvFullscreen(){" +
+                        " var v=document.getElementById('tvVideo');" +
+                        " if(!v||document.getElementById('nativeTvFullscreenBtn'))return;" +
+                        " var row=document.querySelector('.tv-now-row');if(!row)return;" +
+                        " var b=document.createElement('button');" +
+                        " b.id='nativeTvFullscreenBtn';b.className='btn compact focusable';" +
+                        " b.textContent='⛶ Toàn màn hình TV';" +
+                        " b.addEventListener('click',function(){" +
+                        "  try{" +
+                        "   if(v.requestFullscreen){var p=v.requestFullscreen();if(p&&p.catch)p.catch(function(){});}" +
+                        "   else if(v.webkitEnterFullscreen)v.webkitEnterFullscreen();" +
+                        "   else if(v.webkitRequestFullscreen)v.webkitRequestFullscreen();" +
+                        "  }catch(e){}" +
+                        " });" +
+                        " var adv=document.getElementById('tvAdvancedToggle');" +
+                        " if(adv&&adv.parentNode===row)row.insertBefore(b,adv);else row.appendChild(b);" +
+                        "}" +
+
+                        // B/Back twice at the root exits. Inside panels/games Back keeps its normal web behavior.
+                        "if(!window.__tvNativeBackInstalled){" +
+                        " window.__tvNativeBackInstalled=true;window.__tvNativeBackAt=0;" +
+                        " window.addEventListener('tvgamepad',function(ev){" +
+                        "  try{" +
+                        "   var d=ev&&ev.detail||{};" +
+                        "   if(d.kind!=='button'||d.action!=='down'||d.name!=='B')return;" +
+                        "   var panel=document.getElementById('appPanel');" +
+                        "   if((panel&&panel.classList.contains('open'))||window.tvGameActive||document.fullscreenElement)return;" +
+                        "   var n=Date.now();" +
+                        "   if(n-(window.__tvNativeBackAt||0)<1900){" +
+                        "    window.__tvNativeBackAt=0;ev.stopImmediatePropagation();location.href='tvnative://exit';" +
+                        "   }else{" +
+                        "    window.__tvNativeBackAt=n;ev.stopImmediatePropagation();" +
+                        "    if(window.showToast)window.showToast('Nhấn Back lần nữa để thoát APP');" +
+                        "   }" +
+                        "  }catch(e){}" +
+                        " },true);" +
+                        "}" +
+
+                        "installExit();installTvFullscreen();" +
+                        "if(!window.__tvNativeControlsObserver){" +
+                        " window.__tvNativeControlsObserver=new MutationObserver(function(){installExit();installTvFullscreen();});" +
+                        " window.__tvNativeControlsObserver.observe(document.documentElement,{childList:true,subtree:true});" +
+                        "}" +
                         "}catch(e){}})();",
                         null
                 );
