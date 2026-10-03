@@ -1,78 +1,116 @@
 <!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#08111f" />
-  <meta name="color-scheme" content="dark" />
-  <title>TV Utility</title>
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#07111e">
+  <meta name="color-scheme" content="dark">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Xiaomi TV Hub</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <div class="bg-glow bg-glow-a"></div>
-  <div class="bg-glow bg-glow-b"></div>
+  <div class="ambient" aria-hidden="true"></div>
 
-  <main class="app-shell">
+  <main class="shell" id="app">
     <header class="topbar">
-      <div>
-        <p class="eyebrow">ANDROID TV DASHBOARD</p>
+      <div class="brand">
+        <p class="eyebrow">XIAOMI ANDROID TV HUB</p>
         <h1 id="greeting">Tiện ích TV</h1>
         <p id="today" class="muted">Đang tải ngày giờ…</p>
       </div>
-
-      <div class="clock-card" aria-label="Đồng hồ">
+      <div class="status-card">
         <div id="clock" class="clock">--:--</div>
-        <div class="status-row">
+        <div class="status-line">
           <span id="networkDot" class="dot"></span>
           <span id="networkText">Đang kiểm tra mạng</span>
         </div>
+        <div id="connectionText" class="connection muted-small"></div>
       </div>
     </header>
 
-    <section class="quick-bar" aria-label="Mở nhanh địa chỉ web">
-      <input id="urlInput" class="focusable" type="text" inputmode="url" autocomplete="off"
-        placeholder="Nhập địa chỉ web, ví dụ: https://example.com" aria-label="Địa chỉ web" />
-      <button id="openUrlBtn" class="btn primary focusable">Mở trang</button>
+    <section class="search-panel" aria-label="Tìm kiếm và mở trang">
+      <span class="search-icon" aria-hidden="true">⌕</span>
+      <input id="searchInput" class="focusable" type="text" inputmode="search" autocomplete="off"
+        placeholder="Tìm trên Google hoặc nhập địa chỉ web…" aria-label="Tìm kiếm hoặc địa chỉ web">
+      <button id="searchBtn" class="btn primary focusable">Tìm / Mở</button>
     </section>
 
-    <section>
-      <div class="section-title-row">
-        <h2>Truy cập nhanh</h2>
-        <span class="hint">Remote: phím mũi tên + OK/Enter</span>
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">LAUNCHER</p>
+          <h2>Ứng dụng & website</h2>
+        </div>
+        <span class="hint">Remote: ← ↑ ↓ → · OK/Enter · Back/Esc</span>
       </div>
-
-      <div id="tiles" class="tiles" aria-label="Các tiện ích"></div>
+      <div id="tiles" class="tiles" aria-label="Các lối tắt"></div>
     </section>
 
-    <section class="actions-row">
-      <button id="fullscreenBtn" class="btn focusable">⛶ Toàn màn hình</button>
-      <button id="reloadBtn" class="btn focusable">↻ Tải lại</button>
-      <button id="settingsBtn" class="btn focusable">⚙ Cài đặt ô</button>
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">TV TOOLS</p>
+          <h2>Tiện ích nhanh</h2>
+        </div>
+      </div>
+      <div class="tools-grid">
+        <button id="fullscreenBtn" class="tool focusable"><span>⛶</span><b>Toàn màn hình</b><small id="fullscreenState">Tắt</small></button>
+        <button id="wakeBtn" class="tool focusable"><span>☀</span><b>Giữ màn hình sáng</b><small id="wakeState">Tắt</small></button>
+        <button id="performanceBtn" class="tool focusable"><span>⚡</span><b>Chế độ nhẹ</b><small id="performanceState">Tắt</small></button>
+        <button id="sizeBtn" class="tool focusable"><span>🔎</span><b>Cỡ giao diện</b><small id="sizeState">Chuẩn</small></button>
+        <button id="screensaverBtn" class="tool focusable"><span>🌙</span><b>Màn hình chờ</b><small id="screensaverState">8 phút</small></button>
+        <button id="infoBtn" class="tool focusable"><span>ⓘ</span><b>Thông tin TV</b><small>Xem thiết bị</small></button>
+        <button id="installBtn" class="tool focusable hidden"><span>＋</span><b>Cài như ứng dụng</b><small>Thêm vào TV</small></button>
+        <button id="reloadBtn" class="tool focusable"><span>↻</span><b>Tải lại</b><small>Làm mới trang</small></button>
+        <button id="settingsBtn" class="tool focusable"><span>⚙</span><b>Chỉnh launcher</b><small>Đổi 12 ô</small></button>
+      </div>
     </section>
+
+    <footer>
+      <span id="versionText">Xiaomi TV Hub V2</span>
+      <span>GitHub Pages · Không quảng cáo · Không theo dõi</span>
+    </footer>
   </main>
 
   <dialog id="settingsDialog" class="dialog">
-    <form method="dialog" class="dialog-card" id="settingsForm">
+    <form id="settingsForm" class="dialog-card">
       <div class="dialog-head">
-        <div>
-          <p class="eyebrow">TÙY BIẾN</p>
-          <h2>Cài đặt truy cập nhanh</h2>
-        </div>
-        <button class="icon-btn focusable" value="cancel" aria-label="Đóng">✕</button>
+        <div><p class="eyebrow">TÙY BIẾN</p><h2>Chỉnh 12 ô launcher</h2></div>
+        <button type="button" class="icon-btn focusable close-dialog" aria-label="Đóng">✕</button>
       </div>
-
+      <p class="muted dialog-note">Tên, biểu tượng và URL được lưu ngay trên TV bằng localStorage.</p>
       <div id="settingsList" class="settings-list"></div>
-
       <div class="dialog-actions">
         <button type="button" id="resetBtn" class="btn danger focusable">Khôi phục mặc định</button>
-        <button type="submit" id="saveBtn" class="btn primary focusable">Lưu thay đổi</button>
+        <button type="submit" class="btn primary focusable">Lưu thay đổi</button>
       </div>
     </form>
   </dialog>
 
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="infoDialog" class="dialog info-dialog">
+    <div class="dialog-card">
+      <div class="dialog-head">
+        <div><p class="eyebrow">THIẾT BỊ</p><h2>Thông tin Android TV</h2></div>
+        <button type="button" class="icon-btn focusable close-dialog" aria-label="Đóng">✕</button>
+      </div>
+      <div id="deviceInfo" class="info-grid"></div>
+      <div class="dialog-actions end">
+        <button type="button" class="btn primary focusable close-dialog">Đóng</button>
+      </div>
+    </div>
+  </dialog>
 
-  <script src="app.js"></script>
+  <div id="screensaver" class="screensaver" aria-hidden="true">
+    <div id="screensaverContent" class="screensaver-content">
+      <div id="screensaverClock">--:--</div>
+      <div id="screensaverDate"></div>
+      <div class="screensaver-hint">Nhấn phím bất kỳ để quay lại</div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="./app.js"></script>
 </body>
 </html>
