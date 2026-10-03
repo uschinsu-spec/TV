@@ -2,7 +2,7 @@ const TILE_KEY='tvHubTilesV21';
 const PREV_TILE_KEY='tvHubTilesV2';
 const PREF_KEY='tvHubPrefsV2';
 const OLD_TILE_KEY='tvUtilityTilesV1';
-const VERSION='2.1.0';
+const VERSION='3.0.0';
 
 const defaultTiles=[
   {icon:'▶️',title:'YouTube',url:'https://www.youtube.com/tv'},
