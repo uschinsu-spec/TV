@@ -6,104 +6,78 @@
   <meta name="theme-color" content="#07111e">
   <meta name="color-scheme" content="dark">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>Xiaomi TV Toolbox V4</title>
+  <title>Xiaomi TV Home V5</title>
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./style.css?v=4.1">
+  <link rel="stylesheet" href="./style.css?v=5">
 </head>
 <body>
   <div class="ambient" aria-hidden="true"></div>
 
-  <main class="shell">
+  <main class="shell" id="homeScreen">
     <header class="topbar">
       <div>
-        <p class="eyebrow">XIAOMI ANDROID TV · DIRECT ONLY</p>
-        <h1 id="greeting">TV Toolbox</h1>
+        <p class="eyebrow">XIAOMI ANDROID TV</p>
+        <h1 id="greeting">TV Home</h1>
         <p id="today" class="muted">Đang tải ngày giờ…</p>
       </div>
       <div class="status-card">
         <div id="clock" class="clock">--:--</div>
         <div class="status-line"><span id="networkDot" class="dot"></span><span id="networkText">Đang kiểm tra mạng</span></div>
-        <div id="connectionText" class="muted-small"></div>
       </div>
     </header>
 
-    <section class="section hero-section">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">DÙNG NGAY TRÊN TV</p>
-          <h2>20 tiện ích chạy trực tiếp</h2>
-        </div>
-        <span class="hint">Không mở website ngoài · Remote: ← ↑ ↓ → · OK · Back</span>
-      </div>
+    <section class="apps-section">
+      <p class="eyebrow">ỨNG DỤNG CHÍNH</p>
+      <div class="app-grid">
+        <button class="app-card app-tv focusable" data-app="tv">
+          <span class="app-icon">📺</span>
+          <span class="app-title">Xem TV</span>
+          <span class="app-desc">IPTV · M3U · M3U8 · kênh trực tiếp</span>
+        </button>
 
-      <div class="direct-tools-grid">
-        <button class="direct-card focusable" data-direct-tool="timer"><span>⏱️</span><b>Timer</b><small>Đếm ngược</small></button>
-        <button class="direct-card focusable" data-direct-tool="stopwatch"><span>⏲️</span><b>Stopwatch</b><small>Bấm giờ</small></button>
-        <button class="direct-card focusable" data-direct-tool="pomodoro"><span>🍅</span><b>Pomodoro</b><small>25 / 5 phút</small></button>
-        <button class="direct-card focusable" data-direct-tool="alarm"><span>⏰</span><b>Báo thức</b><small>Hẹn giờ trong ngày</small></button>
+        <button class="app-card app-youtube focusable" data-app="youtube">
+          <span class="app-icon">▶️</span>
+          <span class="app-title">YouTube</span>
+          <span class="app-desc">Phát video hoặc playlist ngay trong TV Home</span>
+        </button>
 
-        <button class="direct-card focusable" data-direct-tool="calculator"><span>🧮</span><b>Máy tính</b><small>Tính ngay</small></button>
-        <button class="direct-card focusable" data-direct-tool="convert"><span>🔁</span><b>Đổi đơn vị</b><small>Độ dài / nhiệt / khối lượng</small></button>
-        <button class="direct-card focusable" data-direct-tool="calendar"><span>📅</span><b>Lịch</b><small>Xem tháng</small></button>
-        <button class="direct-card focusable" data-direct-tool="notes"><span>📝</span><b>Ghi chú</b><small>Lưu trên TV</small></button>
-
-        <button class="direct-card focusable" data-direct-tool="bigtext"><span>🔤</span><b>Bảng chữ lớn</b><small>Hiển thị toàn màn hình</small></button>
-        <button class="direct-card focusable" data-direct-tool="random"><span>🎲</span><b>Random</b><small>Số ngẫu nhiên</small></button>
-        <button class="direct-card focusable" data-direct-tool="password"><span>🔐</span><b>Tạo mật khẩu</b><small>Tạo offline</small></button>
-        <button class="direct-card focusable" data-direct-tool="video"><span>🎬</span><b>Video Local</b><small>USB / bộ nhớ TV</small></button>
-
-        <button class="direct-card focusable" data-direct-tool="music"><span>🎵</span><b>Nhạc Local</b><small>USB / bộ nhớ TV</small></button>
-        <button class="direct-card focusable" data-direct-tool="iptv"><span>📺</span><b>IPTV Player</b><small>Phát trong TV Hub</small></button>
-        <button class="direct-card focusable" data-direct-tool="network"><span>📡</span><b>Test mạng</b><small>RTT / kết nối</small></button>
-        <button class="direct-card focusable" data-direct-tool="device"><span>ⓘ</span><b>Thông tin TV</b><small>Màn hình / CPU / RAM</small></button>
-
-        <button class="direct-card focusable" data-direct-tool="screen"><span>🖥️</span><b>Test màn hình</b><small>Màu / gradient</small></button>
-        <button class="direct-card focusable" data-direct-tool="overscan"><span>📐</span><b>Căn Overscan</b><small>Kiểm tra cắt mép</small></button>
-        <button class="direct-card focusable" data-direct-tool="speaker"><span>🔊</span><b>Test loa</b><small>Trái / phải</small></button>
-        <button class="direct-card focusable" data-direct-tool="remote"><span>🎮</span><b>Remote + Gamepad</b><small>Test F710 / mã phím</small></button>
+        <button class="app-card app-game focusable" data-app="game">
+          <span class="app-icon">🎮</span>
+          <span class="app-title">Game</span>
+          <span class="app-desc">Snake · Pong · 2048</span>
+        </button>
       </div>
     </section>
 
-    <section class="section">
-      <div class="section-head">
-        <div><p class="eyebrow">HỆ THỐNG TV</p><h2>Điều khiển nhanh</h2></div>
-      </div>
-      <div class="system-grid">
-        <button id="fullscreenBtn" class="system-card focusable"><span>⛶</span><b>Toàn màn hình</b><small id="fullscreenState">Tắt</small></button>
-        <button id="wakeBtn" class="system-card focusable"><span>☀</span><b>Giữ màn hình sáng</b><small id="wakeState">Tắt</small></button>
-        <button id="performanceBtn" class="system-card focusable"><span>⚡</span><b>Chế độ nhẹ</b><small id="performanceState">Tắt</small></button>
-        <button id="sizeBtn" class="system-card focusable"><span>🔎</span><b>Cỡ giao diện</b><small id="sizeState">Chuẩn</small></button>
-        <button id="screensaverBtn" class="system-card focusable"><span>🌙</span><b>Màn hình chờ</b><small id="screensaverState">8 phút</small></button>
-        <button id="reloadBtn" class="system-card focusable"><span>↻</span><b>Tải lại Hub</b><small>Làm mới</small></button>
-      </div>
+    <section class="system-strip">
+      <button id="fullscreenBtn" class="sys-btn focusable">⛶ Toàn màn hình</button>
+      <button id="wakeBtn" class="sys-btn focusable">☀ Giữ màn hình sáng <small id="wakeState">Tắt</small></button>
+      <button id="reloadBtn" class="sys-btn focusable">↻ Tải lại</button>
     </section>
 
     <footer>
-      <span id="versionText">Xiaomi TV Toolbox V4.1</span>
-      <span>Direct-only · Không launcher link · Không quảng cáo</span>
+      <span>Xiaomi TV Home V5</span>
+      <span>Remote · chuột · bàn phím</span>
     </footer>
   </main>
 
-  <dialog id="toolDialog" class="dialog">
-    <div class="dialog-card">
-      <div class="dialog-head">
-        <div><p class="eyebrow">TV TOOLBOX</p><h2 id="toolTitle">Tiện ích</h2><p id="toolSubtitle" class="muted-small"></p></div>
-        <button type="button" class="icon-btn focusable close-dialog" aria-label="Đóng">✕</button>
+  <section id="appPanel" class="app-panel" aria-hidden="true">
+    <header class="panel-top">
+      <button id="backBtn" class="back-btn focusable">← Quay lại</button>
+      <div>
+        <p class="eyebrow" id="panelEyebrow">ỨNG DỤNG</p>
+        <h2 id="panelTitle">Xem TV</h2>
       </div>
-      <div id="toolBody" class="tool-body"></div>
-    </div>
-  </dialog>
-
-  <div id="screensaver" class="screensaver" aria-hidden="true">
-    <div id="screensaverContent" class="screensaver-content">
-      <div id="screensaverClock">--:--</div>
-      <div id="screensaverDate"></div>
-      <div class="screensaver-hint">Nhấn phím bất kỳ để quay lại</div>
-    </div>
-  </div>
+      <div class="panel-clock" id="panelClock">--:--</div>
+    </header>
+    <div id="panelBody" class="panel-body"></div>
+  </section>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="./app.js?v=4.1"></script>
-  <script src="./tools.js?v=4.1"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+  <script src="./app.js?v=5"></script>
+  <script src="./media.js?v=5"></script>
+  <script src="./games.js?v=5"></script>
 </body>
 </html>

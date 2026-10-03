@@ -1,54 +1,11 @@
-const CACHE='xiaomi-tv-toolbox-v4-1';
-const CORE=[
-  './',
-  './index.html',
-  './style.css?v=4.1',
-  './app.js?v=4.1',
-  './tools.js?v=4.1',
-  './manifest.webmanifest'
-];
-
-self.addEventListener('install',event=>{
-  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)));
-  self.skipWaiting();
-});
-
-self.addEventListener('activate',event=>{
-  event.waitUntil(
-    caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))
-  );
-  self.clients.claim();
-});
-
-self.addEventListener('fetch',event=>{
-  if(event.request.method!=='GET') return;
-  const url=new URL(event.request.url);
-  if(url.origin!==self.location.origin) return;
-
-  const isCoreAsset =
-    event.request.mode==='navigate' ||
-    url.pathname.endsWith('/index.html') ||
-    url.pathname.endsWith('/style.css') ||
-    url.pathname.endsWith('/app.js') ||
-    url.pathname.endsWith('/tools.js') ||
-    url.pathname.endsWith('/manifest.webmanifest');
-
-  if(isCoreAsset){
-    event.respondWith(
-      fetch(event.request,{cache:'no-store'})
-        .then(response=>{
-          if(response.ok){
-            const copy=response.clone();
-            caches.open(CACHE).then(cache=>cache.put(event.request,copy));
-          }
-          return response;
-        })
-        .catch(()=>caches.match(event.request).then(r=>r||caches.match('./index.html')))
-    );
-    return;
-  }
-
-  event.respondWith(
-    caches.match(event.request).then(cached=>cached||fetch(event.request))
-  );
+const CACHE='xiaomi-tv-home-v5';
+const CORE=['./','./index.html','./style.css?v=5','./app.js?v=5','./media.js?v=5','./games.js?v=5','./manifest.webmanifest'];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)));self.skipWaiting()});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});
+self.addEventListener('fetch',e=>{
+  if(e.request.method!=='GET')return;
+  const u=new URL(e.request.url);if(u.origin!==self.location.origin)return;
+  const core=e.request.mode==='navigate'||/\/(index\.html|style\.css|app\.js|media\.js|games\.js|manifest\.webmanifest)$/.test(u.pathname);
+  if(core){e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{if(r.ok){const x=r.clone();caches.open(CACHE).then(c=>c.put(e.request,x))}return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html'))));return}
+  e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));
 });

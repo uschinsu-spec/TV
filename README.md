@@ -1,21 +1,15 @@
-# Xiaomi TV Toolbox V4 — Direct Only
+# Xiaomi TV Home V5
 
-Bản V4 đã **xóa toàn bộ launcher website, Google, YouTube, ô mở URL và các tiện ích chỉ dẫn sang trang khác**.
+Bản V5 rút gọn toàn bộ giao diện chỉ còn 3 ứng dụng chính:
 
-Trang chính chỉ còn công cụ chạy trực tiếp trong TV Hub.
+- **Xem TV** — IPTV, URL stream, M3U/M3U8, playlist file.
+- **YouTube** — dán link video/playlist và xem bằng player nhúng ngay trong TV Home.
+- **Game** — Snake, Pong và 2048 chạy trực tiếp bằng remote/bàn phím.
 
-## 20 tiện ích trực tiếp
+Chỉ giữ 3 nút hệ thống: Toàn màn hình, Giữ màn hình sáng và Tải lại.
 
-Timer, Stopwatch, Pomodoro, Báo thức, Máy tính, Đổi đơn vị, Lịch, Ghi chú, Bảng chữ lớn, Random, Tạo mật khẩu, Video Local, Nhạc Local, IPTV Player, Test mạng, Thông tin TV, Test màn hình, Căn Overscan, Test loa và Test remote.
+Không còn 20 tiện ích V4 trên giao diện chính.
 
-Video/Nhạc chỉ dùng file local từ TV/USB. IPTV nhận stream/M3U nhưng phát ngay trong TV Hub, không chuyển sang website khác.
+Mở: https://uschinsu-spec.github.io/TV/
 
-## Điều khiển hệ thống
-
-Fullscreen, Wake Lock, Chế độ nhẹ, Cỡ UI, Screensaver và Reload.
-
-## Mở trên TV
-
-https://uschinsu-spec.github.io/TV/
-
-Cache V4: `xiaomi-tv-toolbox-v4`.
+Cache: `xiaomi-tv-home-v5`.

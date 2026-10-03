@@ -1,7 +1,7 @@
 {
-  "name":"Xiaomi TV Toolbox",
-  "short_name":"TV Toolbox",
-  "description":"Bộ tiện ích chạy trực tiếp trên Xiaomi Android TV, không dùng launcher link ngoài.",
+  "name":"Xiaomi TV Home",
+  "short_name":"TV Home",
+  "description":"Trang TV tối giản cho Xiaomi Android TV: xem TV, YouTube và Game.",
   "start_url":"./",
   "scope":"./",
   "display":"standalone",
@@ -10,5 +10,5 @@
   "background_color":"#050a12",
   "theme_color":"#07111e",
   "lang":"vi-VN",
-  "categories":["utilities","entertainment"]
+  "categories":["entertainment","games"]
 }
