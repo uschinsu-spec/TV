@@ -65,7 +65,6 @@ public class MainActivity extends Activity {
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
-        settings.setDatabaseEnabled(true);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
@@ -103,8 +102,8 @@ public class MainActivity extends Activity {
                         "(function(){try{" +
                         "window.__TV_NATIVE_GAMEPAD__=true;" +
                         "window.__TV_NATIVE_APP_VERSION__='1.6';" +
-                        "document.documentElement.setAttribute('tabindex','-1');" +
-                        "document.documentElement.focus();" +
+                        "document.documentElement.classList.add('android-tv');" +
+                        "var f=document.querySelector('.app-card.focusable,.focusable');if(f)f.focus();" +
                         "}catch(e){}})();",
                         null
                 );
