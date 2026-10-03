@@ -1,4 +1,4 @@
-const VERSION='6.0.0';
+const VERSION='6.1.0';
 const $=id=>document.getElementById(id);
 const els={clock:$('clock'),today:$('today'),greeting:$('greeting'),networkDot:$('networkDot'),networkText:$('networkText'),gamepadStatus:$('gamepadStatus'),panel:$('appPanel'),panelTitle:$('panelTitle'),panelEyebrow:$('panelEyebrow'),panelBody:$('panelBody'),panelClock:$('panelClock'),backBtn:$('backBtn'),toast:$('toast'),fullscreenBtn:$('fullscreenBtn'),wakeBtn:$('wakeBtn'),wakeState:$('wakeState'),reloadBtn:$('reloadBtn')};
 let currentApp='',lastFocused=null,wakeLock=null,lastPadNav=0,padPrev={a:false,b:false,start:false,up:false,down:false,left:false,right:false};
