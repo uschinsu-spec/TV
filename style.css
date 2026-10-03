@@ -763,3 +763,131 @@ body.game-running{overflow:hidden}
   .channel-strip{grid-template-columns:repeat(5,minmax(0,1fr))}
   .tv-screen,.youtube-screen{height:calc(100vh - 155px)}
 }
+
+
+/* V7.1 TV landscape home: keep the launcher console-like even when WebView reports ~960 CSS px */
+@media (min-width:760px) and (orientation:landscape){
+  :root{
+    --safe-x:clamp(28px,3.2vw,64px);
+    --safe-y:clamp(18px,2.4vh,34px);
+    --focus-ring:0 0 0 7px var(--focus),0 16px 36px rgba(0,0,0,.46);
+  }
+
+  body.tv-mode{overflow:hidden}
+  .shell{
+    height:100vh;
+    min-height:0;
+    padding:var(--safe-y) var(--safe-x) 18px;
+    overflow:hidden;
+  }
+
+  .tv-header{
+    min-height:96px;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    gap:28px;
+  }
+  .brand-block .eyebrow{margin-bottom:4px;font-size:13px}
+  h1{margin-bottom:4px;font-size:clamp(38px,4.8vw,62px)}
+  .muted{font-size:clamp(15px,1.55vw,20px)}
+  .header-status{min-width:310px;text-align:right}
+  .clock{font-size:clamp(40px,4.5vw,58px)}
+  .status-pills{margin-top:8px;gap:7px;justify-content:flex-end}
+  .status-pill{min-height:32px;padding:5px 10px;font-size:13px}
+
+  .apps-section{
+    margin-top:12px;
+    flex:0 0 auto;
+    min-height:0;
+  }
+  .section-heading{
+    min-height:30px;
+    margin-bottom:10px;
+    gap:18px;
+  }
+  .section-heading .eyebrow{font-size:13px}
+  .remote-hint{font-size:13px}
+
+  .app-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:clamp(14px,1.8vw,24px);
+  }
+  .app-card{
+    height:clamp(220px,44vh,360px);
+    min-height:0 !important;
+    padding:20px 22px 18px;
+    border-radius:24px;
+  }
+  .card-kicker{top:18px;left:21px;font-size:11px}
+  .app-icon{
+    position:static !important;
+    margin-bottom:auto;
+    padding-top:34px !important;
+    font-size:clamp(54px,6vw,82px) !important;
+  }
+  .app-title{font-size:clamp(28px,3.35vw,46px)}
+  .app-desc{margin-top:7px;font-size:clamp(14px,1.55vw,19px)}
+  .card-action{margin-top:10px;font-size:11px}
+  .app-card:focus{
+    transform:scale(1.06);
+    z-index:25;
+  }
+
+  .quick-actions{
+    display:block !important;
+    padding-top:14px;
+  }
+  .quick-label{display:none}
+  .quick-buttons{
+    width:100%;
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:9px;
+  }
+  .quick-buttons .sys-btn{
+    min-width:0;
+    min-height:52px;
+    padding:0 10px;
+    border-radius:14px;
+    font-size:clamp(12px,1.25vw,16px);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .quick-buttons .sys-btn small{
+    display:block;
+    margin:2px 0 0;
+    font-size:10px;
+  }
+
+  /* Override the generic tablet breakpoint: Android TV is landscape-first, not one-column mobile. */
+  .tv-header{grid-template-columns:minmax(0,1fr) auto !important}
+  .header-status{text-align:right !important;min-width:310px !important}
+  .status-pills{justify-content:flex-end !important}
+  .app-grid{grid-template-columns:repeat(3,minmax(0,1fr)) !important}
+  .quick-actions{align-items:stretch !important;flex-direction:row !important}
+  .quick-buttons{justify-content:stretch !important}
+}
+
+@media (min-width:760px) and (orientation:landscape) and (max-height:620px){
+  .shell{padding-top:14px;padding-bottom:12px}
+  .tv-header{min-height:82px}
+  .brand-block .eyebrow,.remote-hint{display:none}
+  h1{font-size:38px}
+  .clock{font-size:40px}
+  .status-pill{font-size:12px}
+  .apps-section{margin-top:8px}
+  .section-heading{min-height:24px;margin-bottom:7px}
+  .app-card{height:clamp(205px,42vh,250px);padding:16px 18px 14px}
+  .card-kicker{top:14px;left:17px}
+  .app-icon{padding-top:26px !important;font-size:52px !important}
+  .app-title{font-size:28px}
+  .app-desc{font-size:14px}
+  .card-action{margin-top:7px}
+  .quick-actions{padding-top:10px}
+  .quick-buttons .sys-btn{min-height:46px;font-size:12px}
+}
+
+@media (max-width:759px), (orientation:portrait){
+  .app-grid{grid-template-columns:1fr}
+}
