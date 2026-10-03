@@ -28,28 +28,10 @@ public class MainActivity extends Activity {
     private static final float STICK_DEADZONE = 0.16f;
     private static final long AXIS_DISPATCH_INTERVAL_MS = 20L;
 
-    private static final String JS_CLEAR_SITE_CACHE =
-            "(async function(){" +
-            "try{" +
-            " if('caches' in window){" +
-            "   const keys=await caches.keys();" +
-            "   await Promise.all(keys.map(function(k){return caches.delete(k);}));" +
-            " }" +
-            "}catch(e){}" +
-            "try{" +
-            " if('serviceWorker' in navigator){" +
-            "   const regs=await navigator.serviceWorker.getRegistrations();" +
-            "   await Promise.all(regs.map(function(r){return r.unregister();}));" +
-            " }" +
-            "}catch(e){}" +
-            "return 'done';" +
-            "})();";
-
     private FrameLayout root;
     private WebView webView;
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
-    private boolean freshnessReloadDone = false;
     private long lastAxisDispatchAt = 0L;
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -92,15 +74,13 @@ public class MainActivity extends Activity {
         settings.setSupportZoom(false);
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
         settings.setSupportMultipleWindows(true);
-        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
 
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
         CookieManager.setAcceptFileSchemeCookies(false);
         cookieManager.setAcceptThirdPartyCookies(webView, true);
-
-        clearOldWebViewCache();
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -118,23 +98,13 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
 
-                if (!freshnessReloadDone && isHomeOrigin(url)) {
-                    freshnessReloadDone = true;
-                    view.evaluateJavascript(JS_CLEAR_SITE_CACHE, value -> {
-                        if (webView == null) return;
-                        webView.clearCache(true);
-                        webView.loadUrl(buildFreshHomeUrl());
-                    });
-                    return;
-                }
-
                 view.setVisibility(View.VISIBLE);
                 view.requestFocus(View.FOCUS_DOWN);
                 view.evaluateJavascript(
                         "(function(){try{" +
                         "window.__TV_NATIVE_GAMEPAD__=true;" +
-                        "document.documentElement.setAttribute('tabindex','-1');" +
-                        "document.documentElement.focus();" +
+                        "document.documentElement.classList.add('android-tv');" +
+                        "var f=document.querySelector('.app-card.focusable,.focusable');if(f)f.focus();" +
                         "}catch(e){}})();",
                         null
                 );
@@ -178,13 +148,8 @@ public class MainActivity extends Activity {
             }
         });
 
-        webView.loadUrl(buildFreshHomeUrl());
+        webView.loadUrl(HOME_URL);
         webView.requestFocus(View.FOCUS_DOWN);
-    }
-
-    private String buildFreshHomeUrl() {
-        String separator = HOME_URL.contains("?") ? "&" : "?";
-        return HOME_URL + separator + "_tvapp_fresh=" + System.currentTimeMillis();
     }
 
     private boolean isHomeOrigin(String url) {
@@ -193,17 +158,6 @@ public class MainActivity extends Activity {
 
     private boolean isHomeVisible() {
         return webView != null && isHomeOrigin(webView.getUrl());
-    }
-
-    private void clearOldWebViewCache() {
-        if (webView == null) return;
-        try {
-            webView.stopLoading();
-            webView.clearCache(true);
-            webView.clearHistory();
-            webView.clearFormData();
-        } catch (Exception ignored) {
-        }
     }
 
     private void enterImmersiveMode() {
@@ -481,6 +435,13 @@ public class MainActivity extends Activity {
             }
         }
 
+        // Android TV remotes commonly report D-pad keys as SOURCE_DPAD rather than GAMEPAD.
+        // Bridge these keys explicitly so WebView focus behavior is deterministic.
+        if (isHomeVisible() && isHomeNavigationKey(keyCode)) {
+            emitInputButton(event, true);
+            return true;
+        }
+
         return super.dispatchKeyEvent(event);
     }
 
@@ -522,7 +483,6 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         if (webView != null) {
-            clearOldWebViewCache();
             webView.loadUrl("about:blank");
             webView.stopLoading();
             webView.setWebChromeClient(null);
