@@ -30,22 +30,34 @@
       </div>
     </header>
 
-    <section class="search-panel" aria-label="Tìm kiếm và mở trang">
+    <section class="quick-bar" aria-label="Mở nhanh địa chỉ web">
+      <input id="urlInput" class="focusable" type="text" inputmode="url" autocomplete="off"
+        placeholder="Nhập địa chỉ web, ví dụ: https://example.com" aria-label="Địa chỉ web">
+      <button id="openUrlBtn" class="btn primary focusable">Mở trang</button>
+    </section>
+
+    <section class="search-panel" aria-label="Tìm kiếm Google">
       <span class="search-icon" aria-hidden="true">⌕</span>
       <input id="searchInput" class="focusable" type="text" inputmode="search" autocomplete="off"
-        placeholder="Tìm trên Google hoặc nhập địa chỉ web…" aria-label="Tìm kiếm hoặc địa chỉ web">
-      <button id="searchBtn" class="btn primary focusable">Tìm / Mở</button>
+        placeholder="Tìm kiếm Google…" aria-label="Tìm kiếm Google">
+      <button id="searchBtn" class="btn primary focusable">Tìm Google</button>
     </section>
 
     <section class="section">
       <div class="section-head">
         <div>
-          <p class="eyebrow">LAUNCHER</p>
-          <h2>Ứng dụng & website</h2>
+          <p class="eyebrow">TRUY CẬP NHANH</p>
+          <h2>Tiện ích V1 + mở rộng V2</h2>
         </div>
         <span class="hint">Remote: ← ↑ ↓ → · OK/Enter · Back/Esc</span>
       </div>
       <div id="tiles" class="tiles" aria-label="Các lối tắt"></div>
+
+      <div class="actions-row v1-actions" aria-label="Các nút V1">
+        <button id="fullscreenBtn" class="btn focusable">⛶ Toàn màn hình <small id="fullscreenState">Tắt</small></button>
+        <button id="reloadBtn" class="btn focusable">↻ Tải lại</button>
+        <button id="settingsBtn" class="btn focusable">⚙ Cài đặt ô</button>
+      </div>
     </section>
 
     <section class="section">
@@ -56,20 +68,17 @@
         </div>
       </div>
       <div class="tools-grid">
-        <button id="fullscreenBtn" class="tool focusable"><span>⛶</span><b>Toàn màn hình</b><small id="fullscreenState">Tắt</small></button>
         <button id="wakeBtn" class="tool focusable"><span>☀</span><b>Giữ màn hình sáng</b><small id="wakeState">Tắt</small></button>
         <button id="performanceBtn" class="tool focusable"><span>⚡</span><b>Chế độ nhẹ</b><small id="performanceState">Tắt</small></button>
         <button id="sizeBtn" class="tool focusable"><span>🔎</span><b>Cỡ giao diện</b><small id="sizeState">Chuẩn</small></button>
         <button id="screensaverBtn" class="tool focusable"><span>🌙</span><b>Màn hình chờ</b><small id="screensaverState">8 phút</small></button>
         <button id="infoBtn" class="tool focusable"><span>ⓘ</span><b>Thông tin TV</b><small>Xem thiết bị</small></button>
         <button id="installBtn" class="tool focusable hidden"><span>＋</span><b>Cài như ứng dụng</b><small>Thêm vào TV</small></button>
-        <button id="reloadBtn" class="tool focusable"><span>↻</span><b>Tải lại</b><small>Làm mới trang</small></button>
-        <button id="settingsBtn" class="tool focusable"><span>⚙</span><b>Chỉnh launcher</b><small>Đổi 12 ô</small></button>
       </div>
     </section>
 
     <footer>
-      <span id="versionText">Xiaomi TV Hub V2</span>
+      <span id="versionText">Xiaomi TV Hub V2.1</span>
       <span>GitHub Pages · Không quảng cáo · Không theo dõi</span>
     </footer>
   </main>

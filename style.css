@@ -82,3 +82,11 @@ body.performance *{backdrop-filter:none!important;transition:none!important}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 @media(max-width:1150px){.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}.tools-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.setting-row{grid-template-columns:82px 1fr}.setting-row .url-field{grid-column:1/-1}}
 @media(max-width:760px){:root{--safe-x:22px;--safe-y:22px}.topbar{grid-template-columns:1fr}.status-card{min-width:0}.search-panel{grid-template-columns:auto 1fr}.search-panel .btn{grid-column:1/-1}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.tools-grid{grid-template-columns:1fr}.section-head,footer{align-items:flex-start;flex-direction:column}.info-grid{grid-template-columns:1fr}}
+
+/* V2.1: giữ nguyên các thao tác V1, bổ sung V2 ở phía dưới */
+.quick-bar{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:var(--radius);background:rgba(13,24,40,.84);margin-bottom:14px}
+.actions-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:20px}
+.v1-actions .btn{min-width:190px}
+.v1-actions .btn small{margin-left:8px;color:var(--muted);font-size:.8em}
+body.performance .quick-bar{background-image:none!important}
+@media(max-width:760px){.quick-bar{grid-template-columns:1fr}.v1-actions .btn{width:100%}}

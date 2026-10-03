@@ -1,4 +1,4 @@
-const CACHE='xiaomi-tv-hub-v2';
+const CACHE='xiaomi-tv-hub-v2-1';
 const CORE=['./','./index.html','./style.css','./app.js','./manifest.webmanifest'];
 
 self.addEventListener('install',event=>{

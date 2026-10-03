@@ -1,26 +1,28 @@
-const TILE_KEY='tvHubTilesV2';
+const TILE_KEY='tvHubTilesV21';
+const PREV_TILE_KEY='tvHubTilesV2';
 const PREF_KEY='tvHubPrefsV2';
 const OLD_TILE_KEY='tvUtilityTilesV1';
-const VERSION='2.0.0';
+const VERSION='2.1.0';
 
 const defaultTiles=[
   {icon:'▶️',title:'YouTube',url:'https://www.youtube.com/tv'},
-  {icon:'🎵',title:'YouTube Music',url:'https://music.youtube.com/'},
   {icon:'🌐',title:'Google',url:'https://www.google.com/'},
-  {icon:'⚡',title:'Kiểm tra mạng',url:'https://fast.com/'},
+  {icon:'⚡',title:'Speedtest',url:'https://fast.com/'},
+  {icon:'📺',title:'Trang TV của tôi',url:'https://example.com/'},
   {icon:'📰',title:'Tin tức',url:'https://news.google.com/'},
+  {icon:'🎵',title:'Nhạc',url:'https://music.youtube.com/'},
+  {icon:'🧭',title:'Trang web 1',url:'https://example.com/'},
+  {icon:'⭐',title:'Trang web 2',url:'https://example.com/'},
   {icon:'📚',title:'Wikipedia',url:'https://vi.wikipedia.org/'},
   {icon:'☁️',title:'Google Drive',url:'https://drive.google.com/'},
   {icon:'🗺️',title:'Bản đồ',url:'https://maps.google.com/'},
-  {icon:'📺',title:'TV của tôi',url:'https://example.com/'},
-  {icon:'⭐',title:'Yêu thích 1',url:'https://example.com/'},
-  {icon:'⭐',title:'Yêu thích 2',url:'https://example.com/'},
-  {icon:'🧭',title:'Website khác',url:'https://example.com/'}
+  {icon:'➕',title:'Website khác',url:'https://example.com/'}
 ];
 
 const $=id=>document.getElementById(id);
 const els={
   tiles:$('tiles'),clock:$('clock'),today:$('today'),greeting:$('greeting'),
+  urlInput:$('urlInput'),openUrlBtn:$('openUrlBtn'),
   searchInput:$('searchInput'),searchBtn:$('searchBtn'),
   networkDot:$('networkDot'),networkText:$('networkText'),connectionText:$('connectionText'),
   fullscreenBtn:$('fullscreenBtn'),fullscreenState:$('fullscreenState'),
@@ -50,6 +52,12 @@ function getTiles(){
   const old=readJSON(OLD_TILE_KEY,null);
   if(Array.isArray(old)&&old.length){
     v=normalizeTiles(old);
+    localStorage.setItem(TILE_KEY,JSON.stringify(v));
+    return v;
+  }
+  const prev=readJSON(PREV_TILE_KEY,null);
+  if(Array.isArray(prev)&&prev.length){
+    v=normalizeTiles(prev);
     localStorage.setItem(TILE_KEY,JSON.stringify(v));
     return v;
   }
@@ -277,6 +285,8 @@ function moveFocus(direction){
 }
 function isTextInput(el){return el&&(['INPUT','TEXTAREA'].includes(el.tagName)||el.isContentEditable)}
 
+els.openUrlBtn.addEventListener('click',()=>openWebsite(els.urlInput.value));
+els.urlInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();openWebsite(els.urlInput.value)}});
 els.searchBtn.addEventListener('click',()=>openSearch(els.searchInput.value));
 els.searchInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();openSearch(els.searchInput.value)}});
 
@@ -289,7 +299,7 @@ els.infoBtn.addEventListener('click',showDeviceInfo);
 els.reloadBtn.addEventListener('click',()=>location.reload());
 els.settingsBtn.addEventListener('click',()=>{renderSettings();openDialog(els.settingsDialog,els.settingsBtn)});
 els.settingsForm.addEventListener('submit',e=>{e.preventDefault();if(saveSettings())closeDialog(els.settingsDialog)});
-els.resetBtn.addEventListener('click',()=>{localStorage.removeItem(TILE_KEY);localStorage.removeItem(OLD_TILE_KEY);renderTiles();renderSettings();showToast('Đã khôi phục 12 ô mặc định')});
+els.resetBtn.addEventListener('click',()=>{localStorage.removeItem(TILE_KEY);localStorage.removeItem(PREV_TILE_KEY);localStorage.removeItem(OLD_TILE_KEY);renderTiles();renderSettings();showToast('Đã khôi phục 12 ô mặc định')});
 document.querySelectorAll('.close-dialog').forEach(b=>b.addEventListener('click',()=>closeDialog(b.closest('dialog'))));
 
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;els.installBtn.classList.remove('hidden')});
