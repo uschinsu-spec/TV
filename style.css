@@ -88,3 +88,10 @@ input:focus,textarea:focus{border-color:var(--focus);box-shadow:0 0 0 4px rgba(2
 @media(max-width:1250px){.game-select{grid-template-columns:repeat(3,minmax(0,1fr))}.youtube-presets{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:1100px){.app-grid{grid-template-columns:1fr}.app-card{min-height:190px}.tv-layout{grid-template-columns:1fr}.status-card{min-width:0}}
 @media(max-width:700px){:root{--safe-x:20px;--safe-y:20px}.topbar{grid-template-columns:1fr}.panel-top{grid-template-columns:1fr auto}.panel-top>div:nth-child(2){grid-column:1/-1}.app-card{min-height:160px}.game-select{grid-template-columns:repeat(2,minmax(0,1fr))}.channel-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.game-board-2048{grid-template-columns:repeat(4,70px)}.tile2048{width:70px;height:70px}.youtube-presets{grid-template-columns:1fr}}
+
+
+/* Android TV performance profile: avoid expensive full-screen/blur effects on low-power TV GPUs. */
+html.android-tv .ambient{display:none}
+html.android-tv .app-card:after{filter:none;opacity:.28}
+html.android-tv .focusable:focus{transform:scale(1.018);box-shadow:0 0 0 5px rgba(255,216,77,.34)}
+html.android-tv .app-panel{scroll-behavior:auto}
