@@ -26,7 +26,7 @@ window.renderGameApp=function(){
 };
 function cleanup(){cancelAnimationFrame(raf);raf=0;last=0;paused=false;keys.clear();pressed.clear();state=null;window.tvGameActive=false}
 window.stopActiveGame=cleanup;
-function exitGame(){cleanup();const st=$('gameStage');if(st)st.innerHTML='<div class="status">Đã thoát game. Chọn game khác phía trên.</div>';const gs=$('gameState');if(gs)gs.textContent='Đã thoát game';setTimeout(()=>document.querySelector('[data-game="'+game+'"]')?.focus(),20)}
+function exitGame(){window.tvGameInputLockUntil=performance.now()+550;cleanup();const st=$('gameStage');if(st)st.innerHTML='<div class="status">Đã thoát game. Chọn game khác phía trên.</div>';const gs=$('gameState');if(gs)gs.textContent='Đã thoát game';setTimeout(()=>document.querySelector('[data-game="'+game+'"]')?.focus(),20)}
 function setupCanvas(w=960,h=540){const stage=$('gameStage');stage.innerHTML='<canvas id="gameCanvas" width="'+w+'" height="'+h+'"></canvas>';canvas=$('gameCanvas');ctx=canvas.getContext('2d');return canvas}
 function firstPad(){const list=navigator.getGamepads?navigator.getGamepads():[];for(const p of list)if(p&&p.connected)return p;return null}
 function readPad(){
