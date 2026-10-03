@@ -25,8 +25,8 @@ import java.util.Locale;
 public class MainActivity extends Activity {
 
     private static final String HOME_URL = "https://uschinsu-spec.github.io/TV/";
-    private static final float STICK_DEADZONE = 0.18f;
-    private static final long AXIS_DISPATCH_INTERVAL_MS = 24L;
+    private static final float STICK_DEADZONE = 0.16f;
+    private static final long AXIS_DISPATCH_INTERVAL_MS = 20L;
 
     private static final String JS_CLEAR_SITE_CACHE =
             "(async function(){" +
@@ -75,11 +75,10 @@ public class MainActivity extends Activity {
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
         webView.setVisibility(View.INVISIBLE);
 
-        FrameLayout.LayoutParams webParams = new FrameLayout.LayoutParams(
+        root.addView(webView, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
-        );
-        root.addView(webView, webParams);
+        ));
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -236,6 +235,22 @@ public class MainActivity extends Activity {
                 ((source & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK);
     }
 
+    private boolean isHomeNavigationKey(int keyCode) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_DPAD_UP:
+            case KeyEvent.KEYCODE_DPAD_DOWN:
+            case KeyEvent.KEYCODE_DPAD_LEFT:
+            case KeyEvent.KEYCODE_DPAD_RIGHT:
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+            case KeyEvent.KEYCODE_ENTER:
+            case KeyEvent.KEYCODE_NUMPAD_ENTER:
+            case KeyEvent.KEYCODE_SPACE:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     private String controllerButtonName(int keyCode) {
         switch (keyCode) {
             case KeyEvent.KEYCODE_BUTTON_A: return "A";
@@ -250,11 +265,18 @@ public class MainActivity extends Activity {
             case KeyEvent.KEYCODE_BUTTON_SELECT: return "SELECT";
             case KeyEvent.KEYCODE_BUTTON_THUMBL: return "L3";
             case KeyEvent.KEYCODE_BUTTON_THUMBR: return "R3";
+            case KeyEvent.KEYCODE_BUTTON_MODE: return "MODE";
+            case KeyEvent.KEYCODE_BUTTON_C: return "C";
+            case KeyEvent.KEYCODE_BUTTON_Z: return "Z";
             case KeyEvent.KEYCODE_DPAD_UP: return "DPAD_UP";
             case KeyEvent.KEYCODE_DPAD_DOWN: return "DPAD_DOWN";
             case KeyEvent.KEYCODE_DPAD_LEFT: return "DPAD_LEFT";
             case KeyEvent.KEYCODE_DPAD_RIGHT: return "DPAD_RIGHT";
-            case KeyEvent.KEYCODE_DPAD_CENTER: return "DPAD_CENTER";
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+            case KeyEvent.KEYCODE_ENTER:
+            case KeyEvent.KEYCODE_NUMPAD_ENTER:
+            case KeyEvent.KEYCODE_SPACE:
+                return "DPAD_CENTER";
             default:
                 if (keyCode >= KeyEvent.KEYCODE_BUTTON_1 && keyCode <= KeyEvent.KEYCODE_BUTTON_16) {
                     return "BUTTON_" + (keyCode - KeyEvent.KEYCODE_BUTTON_1 + 1);
@@ -273,15 +295,16 @@ public class MainActivity extends Activity {
     }
 
     private String controllerDeviceName(InputDevice device) {
-        if (device == null) return "Android gamepad";
+        if (device == null) return "Android input";
         return device.getName() + " [VID " + device.getVendorId() + " PID " + device.getProductId() + "]";
     }
 
-    private void emitGamepadButton(KeyEvent event) {
+    private void emitInputButton(KeyEvent event, boolean forceRemote) {
         if (webView == null) return;
         String action = event.getAction() == KeyEvent.ACTION_DOWN ? "down" : "up";
         String name = controllerButtonName(event.getKeyCode());
         String device = controllerDeviceName(event.getDevice());
+        String source = forceRemote ? "remote" : "gamepad";
         String js = "(function(){try{" +
                 "window.__TV_NATIVE_GAMEPAD__=true;" +
                 "window.__lastTVGamepadDevice='" + jsString(device) + "';" +
@@ -291,6 +314,7 @@ public class MainActivity extends Activity {
                 "name:'" + jsString(name) + "'," +
                 "code:" + event.getKeyCode() + "," +
                 "repeat:" + event.getRepeatCount() + "," +
+                "source:'" + source + "'," +
                 "device:'" + jsString(device) + "'" +
                 "}}));" +
                 "}catch(e){}})();";
@@ -300,7 +324,7 @@ public class MainActivity extends Activity {
     private float centeredAxis(MotionEvent event, int axis) {
         InputDevice device = event.getDevice();
         if (device == null) return 0f;
-        InputDevice.MotionRange range = device.getMotionRange(axis, event.getSource());
+        InputDevice.MotionRange range = device.getMotionRange(axis);
         if (range == null) return 0f;
         float value = event.getAxisValue(axis);
         float flat = Math.max(STICK_DEADZONE, range.getFlat());
@@ -310,7 +334,7 @@ public class MainActivity extends Activity {
     private float triggerAxis(MotionEvent event, int axis) {
         InputDevice device = event.getDevice();
         if (device == null) return 0f;
-        InputDevice.MotionRange range = device.getMotionRange(axis, event.getSource());
+        InputDevice.MotionRange range = device.getMotionRange(axis);
         if (range == null) return 0f;
         float raw = event.getAxisValue(axis);
         float min = range.getMin();
@@ -377,6 +401,7 @@ public class MainActivity extends Activity {
                 "hatY:" + number(hatY) + "," +
                 "lt:" + number(lt) + "," +
                 "rt:" + number(rt) + "," +
+                "source:'gamepad'," +
                 "device:'" + jsString(device) + "'" +
                 "}}));" +
                 "}catch(e){}})();";
@@ -385,7 +410,9 @@ public class MainActivity extends Activity {
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
+        int keyCode = event.getKeyCode();
+
+        if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_BACK) {
             if (customView != null) {
                 hideCustomView();
                 return true;
@@ -396,8 +423,13 @@ public class MainActivity extends Activity {
             }
         }
 
+        if (isHomeVisible() && isHomeNavigationKey(keyCode)) {
+            emitInputButton(event, !isGameControllerSource(event.getSource()));
+            return true;
+        }
+
         if (isGameControllerSource(event.getSource())) {
-            emitGamepadButton(event);
+            emitInputButton(event, false);
             if (isHomeVisible()) {
                 return true;
             }
@@ -407,14 +439,14 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    public boolean onGenericMotionEvent(MotionEvent event) {
+    public boolean dispatchGenericMotionEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_MOVE && isGameControllerSource(event.getSource())) {
             emitGamepadAxes(event);
             if (isHomeVisible()) {
                 return true;
             }
         }
-        return super.onGenericMotionEvent(event);
+        return super.dispatchGenericMotionEvent(event);
     }
 
     @Override

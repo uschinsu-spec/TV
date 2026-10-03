@@ -10,7 +10,7 @@ window.renderGameApp=function(){
     '<button class="btn game-choice focusable" data-game="snake">🐍 Snake</button>'+
     '<button class="btn game-choice focusable" data-game="pong">🏓 Pong</button>'+
     '<button class="btn game-choice focusable" data-game="2048">🔢 2048</button>'+
-    '</div><div class="game-hud"><span id="gameScore">Điểm: 0</span><span id="gameState">Chọn game để bắt đầu</span></div><div id="gameStage" class="game-stage"></div><div class="game-help">Remote/bàn phím: phím mũi tên để chơi · Back/Esc để thoát game về menu.</div></div>';
+    '</div><div class="game-hud"><span id="gameScore">Điểm: 0</span><span id="gameState">Chọn game để bắt đầu</span></div><div id="gameStage" class="game-stage"></div><div class="game-help">Remote/F710: D-pad hoặc analog trái để chơi · A/OK chọn · B thoát · X/Start chơi lại · Y/R1/R2 game kế · L1/L2 game trước.</div></div>';
   document.querySelectorAll('[data-game]').forEach(b=>b.onclick=()=>startGame(b.dataset.game));
   startGame('snake');
 };
@@ -19,7 +19,7 @@ window.stopActiveGame=cleanup;
 
 function startGame(name){cleanup();game=name;window.tvGameActive=true;$('gameState').textContent=name==='snake'?'Snake':'Đang chơi '+name;if(name==='snake')startSnake();if(name==='pong')startPong();if(name==='2048')start2048()}
 
-function setupCanvas(w=800,h=480){const stage=$('gameStage');stage.innerHTML='<canvas id="gameCanvas" width="'+w+'" height="'+h+'"></canvas>';canvas=$('gameCanvas');ctx=canvas.getContext('2d');return canvas}
+function cycleGame(delta){const list=['snake','pong','2048'];const i=Math.max(0,list.indexOf(game));startGame(list[(i+delta+list.length)%list.length])}\nfunction setupCanvas(w=800,h=480){const stage=$('gameStage');stage.innerHTML='<canvas id="gameCanvas" width="'+w+'" height="'+h+'"></canvas>';canvas=$('gameCanvas');ctx=canvas.getContext('2d');return canvas}
 function drawBg(){ctx.fillStyle='#050b12';ctx.fillRect(0,0,canvas.width,canvas.height)}
 
 function startSnake(){
@@ -57,7 +57,7 @@ document.addEventListener('keydown',e=>{
   const back=['Escape','BrowserBack','GoBack'].includes(e.key)||e.keyCode===4;
   if(back){e.preventDefault();cleanup();$('gameState').textContent='Đã thoát game · chọn game khác hoặc Quay lại';return}
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();keys[e.key]=true;if(game==='snake'&&snakeState&&!snakeState.over){const m={ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0}}[e.key],d=snakeState.dir;if(m.x!==-d.x||m.y!==-d.y)snakeState.next=m}if(game==='2048')move2048(e.key.replace('Arrow','').toLowerCase())}
-  if((e.key==='Enter'||e.key===' ')&&game==='snake'&&snakeState?.over)startGame('snake');
+  if((e.key==='Enter'||e.key===' ')&&game==='snake'&&snakeState?.over)startGame('snake');\n  if(e.key==='GamepadX'||e.key==='GamepadStart'||e.key==='GamepadL3')startGame(game);\n  if(e.key==='GamepadY'||e.key==='GamepadR1'||e.key==='GamepadR2'||e.key==='GamepadR3')cycleGame(1);\n  if(e.key==='GamepadL1'||e.key==='GamepadL2')cycleGame(-1);\n  if(e.key==='GamepadSelect'){cleanup();$('gameState').textContent='Đã thoát game · chọn game khác hoặc Quay lại'}
 },true);
 document.addEventListener('keyup',e=>{if(window.tvGameActive)keys[e.key]=false},true);
 })();
