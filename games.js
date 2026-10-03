@@ -97,7 +97,7 @@ function launchGame(id){
   }catch{}
   window.TVInput?.setGameMode?.(false);
   window.tvGameActive=false;
-  showToast?.('Đang mở '+game.title+'…');
+  window.showToast?.('Đang mở '+game.title+'…');
   setTimeout(()=>location.assign(game.url),80);
 }
 
