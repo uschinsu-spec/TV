@@ -45,7 +45,7 @@ function text(msg,x,y,size=24,align='left'){ctx.fillStyle='#eef5ff';ctx.font='70
 function loop(update,draw){
   function frame(t){if(!window.tvGameActive)return;const dt=Math.min(.04,(t-last)/1000||.016);last=t;const c=input();if(c.bEdge){exitGame();return}if(c.startEdge){paused=!paused;$('gameState').textContent=paused?'Tạm dừng':'Đang chơi'}if(!paused)update(dt,c);draw(c);raf=requestAnimationFrame(frame)}raf=requestAnimationFrame(frame)
 }
-function startGame(name){cleanup();game=name;window.tvGameActive=true;padPrev={};$('gameState').textContent='Đang chơi '+(GAMES.find(g=>g[0]===name)?.[1]||name);$('gameScore').textContent='Điểm: 0';({snake:startSnake,pong:startPong,breakout:startBreakout,shooter:startShooter,racer:startRacer,flappy:startFlappy,asteroids:startAsteroids,catcher:startCatcher,'2048':start2048,reaction:startReaction}[name])?.()}
+function cycleGameNative(delta){const i=Math.max(0,GAMES.findIndex(g=>g[0]===game));startGame(GAMES[(i+delta+GAMES.length)%GAMES.length][0])}\nfunction startGame(name){cleanup();game=name;window.tvGameActive=true;padPrev={};$('gameState').textContent='Đang chơi '+(GAMES.find(g=>g[0]===name)?.[1]||name);$('gameScore').textContent='Điểm: 0';({snake:startSnake,pong:startPong,breakout:startBreakout,shooter:startShooter,racer:startRacer,flappy:startFlappy,asteroids:startAsteroids,catcher:startCatcher,'2048':start2048,reaction:startReaction}[name])?.()}
 
 function startSnake(){
   setupCanvas();const cell=24,cols=40,rows=22;state={body:[{x:10,y:10},{x:9,y:10},{x:8,y:10}],dir:{x:1,y:0},next:{x:1,y:0},food:{x:22,y:10},acc:0,score:0,over:false};
@@ -96,6 +96,14 @@ function startReaction(){
   function frame(t){if(!window.tvGameActive||game!=='reaction')return;const c=input();if(c.bEdge){exitGame();return}const box=$('reactionBox');if(state.phase==='idle'&&c.aEdge)resetWait();else if(state.phase==='wait'){if(c.aEdge){state.phase='idle';box.textContent='Quá sớm! Nhấn A để thử lại';box.style.background='#53303a'}else if(t>=state.goAt){state.phase='go';state.startAt=t;box.textContent='NHẤN A!';box.style.background='#146c43'}}else if(state.phase==='go'&&c.aEdge){const ms=Math.round(t-state.startAt);state.best=state.best==null?ms:Math.min(state.best,ms);$('gameScore').textContent='Phản xạ: '+ms+' ms · Tốt nhất '+state.best+' ms';state.phase='idle';box.textContent=ms+' ms · Nhấn A để chơi lại';box.style.background='#163d68'}raf=requestAnimationFrame(frame)}raf=requestAnimationFrame(frame)
 }
 
-document.addEventListener('keydown',e=>{if(!window.tvGameActive)return;const back=['Escape','BrowserBack','GoBack'].includes(e.key)||e.keyCode===4;if(back){e.preventDefault();exitGame();return}if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','Enter'].includes(e.key)){e.preventDefault();keys.add(e.key);if(!e.repeat)pressed.add(e.key)}},true);
+document.addEventListener('keydown',e=>{if(!window.tvGameActive)return;
+  const back=['Escape','BrowserBack','GoBack'].includes(e.key)||e.keyCode===4;
+  if(back||e.key==='GamepadSelect'){e.preventDefault();exitGame();return}
+  if(e.key==='GamepadStart'){e.preventDefault();paused=!paused;const gs=$('gameState');if(gs)gs.textContent=paused?'Tạm dừng':'Đang chơi';return}
+  if(e.key==='GamepadX'||e.key==='GamepadL3'){e.preventDefault();startGame(game);return}
+  if(e.key==='GamepadY'||e.key==='GamepadR1'||e.key==='GamepadR2'||e.key==='GamepadR3'){e.preventDefault();cycleGameNative(1);return}
+  if(e.key==='GamepadL1'||e.key==='GamepadL2'){e.preventDefault();cycleGameNative(-1);return}
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','Enter'].includes(e.key)){e.preventDefault();keys.add(e.key);if(!e.repeat)pressed.add(e.key)}
+},true);
 document.addEventListener('keyup',e=>{if(window.tvGameActive)keys.delete(e.key)},true);
 })();

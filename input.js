@@ -1,5 +1,5 @@
 (function(){
-'use strict';
+'use strict';\nwindow.__TV_INPUT_BRIDGE_READY__=true;
 
 const NAV_ON=.52;
 const NAV_OFF=.30;
@@ -12,6 +12,12 @@ let browserPad='';
 let prevLT=false,prevRT=false;
 
 function toast(msg){try{window.showToast?.(msg)}catch(e){}}
+function setNativeStatus(d){
+  const el=document.getElementById('gamepadStatus');if(!el)return;
+  const label=d?.device||window.__lastTVGamepadDevice||'Gamepad/Remote';
+  const action=d?.kind==='button'?(d.name+' '+String(d.action||'').toUpperCase()):'ANALOG';
+  el.textContent='🎮 '+label+' · '+action;el.classList.add('connected');
+}
 function gameActive(){return !!window.tvGameActive}
 function panelOpen(){return document.getElementById('appPanel')?.classList.contains('open')}
 function focusFirst(selector){document.querySelector(selector)?.focus?.()}

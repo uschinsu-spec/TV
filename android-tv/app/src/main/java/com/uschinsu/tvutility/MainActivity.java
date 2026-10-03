@@ -299,24 +299,74 @@ public class MainActivity extends Activity {
         return device.getName() + " [VID " + device.getVendorId() + " PID " + device.getProductId() + "]";
     }
 
+    private String fallbackDomKey(String name) {
+        switch (name) {
+            case "DPAD_UP": return "ArrowUp";
+            case "DPAD_DOWN": return "ArrowDown";
+            case "DPAD_LEFT": return "ArrowLeft";
+            case "DPAD_RIGHT": return "ArrowRight";
+            case "A":
+            case "DPAD_CENTER":
+            case "START": return "Enter";
+            case "B": return "Escape";
+            case "X": return "x";
+            case "Y": return "y";
+            case "L1": return "PageUp";
+            case "R1": return "PageDown";
+            case "L2": return "q";
+            case "R2": return "e";
+            case "SELECT": return "Tab";
+            case "L3": return "1";
+            case "R3": return "2";
+            default: return "";
+        }
+    }
+
+    private String fallbackDomCode(String name) {
+        switch (name) {
+            case "DPAD_UP": return "ArrowUp";
+            case "DPAD_DOWN": return "ArrowDown";
+            case "DPAD_LEFT": return "ArrowLeft";
+            case "DPAD_RIGHT": return "ArrowRight";
+            case "A":
+            case "DPAD_CENTER":
+            case "START": return "Enter";
+            case "B": return "Escape";
+            case "X": return "KeyX";
+            case "Y": return "KeyY";
+            case "L1": return "PageUp";
+            case "R1": return "PageDown";
+            case "L2": return "KeyQ";
+            case "R2": return "KeyE";
+            case "SELECT": return "Tab";
+            case "L3": return "Digit1";
+            case "R3": return "Digit2";
+            default: return "";
+        }
+    }
+
     private void emitInputButton(KeyEvent event, boolean forceRemote) {
         if (webView == null) return;
         String action = event.getAction() == KeyEvent.ACTION_DOWN ? "down" : "up";
         String name = controllerButtonName(event.getKeyCode());
         String device = controllerDeviceName(event.getDevice());
         String source = forceRemote ? "remote" : "gamepad";
+        String domKey = fallbackDomKey(name);
+        String domCode = fallbackDomCode(name);
+        boolean down = event.getAction() == KeyEvent.ACTION_DOWN;
+
         String js = "(function(){try{" +
                 "window.__TV_NATIVE_GAMEPAD__=true;" +
                 "window.__lastTVGamepadDevice='" + jsString(device) + "';" +
-                "window.dispatchEvent(new CustomEvent('tvgamepad',{detail:{" +
-                "kind:'button'," +
-                "action:'" + action + "'," +
-                "name:'" + jsString(name) + "'," +
-                "code:" + event.getKeyCode() + "," +
-                "repeat:" + event.getRepeatCount() + "," +
-                "source:'" + source + "'," +
-                "device:'" + jsString(device) + "'" +
-                "}}));" +
+                "var d={kind:'button',action:'" + action + "',name:'" + jsString(name) + "',code:" + event.getKeyCode() +
+                ",repeat:" + event.getRepeatCount() + ",source:'" + source + "',device:'" + jsString(device) + "'};" +
+                "if(window.__TV_INPUT_BRIDGE_READY__){" +
+                " window.dispatchEvent(new CustomEvent('tvgamepad',{detail:d}));" +
+                "}else{" +
+                " var k='" + jsString(domKey) + "',c='" + jsString(domCode) + "';" +
+                " if(k){var t=document.activeElement||document;" +
+                " t.dispatchEvent(new KeyboardEvent('" + (down ? "keydown" : "keyup") + "',{key:k,code:c,bubbles:true,cancelable:true,repeat:" + (event.getRepeatCount() > 0 ? "true" : "false") + "}));}" +
+                "}" +
                 "}catch(e){}})();";
         webView.evaluateJavascript(js, null);
     }
@@ -391,19 +441,20 @@ public class MainActivity extends Activity {
         String js = "(function(){try{" +
                 "window.__TV_NATIVE_GAMEPAD__=true;" +
                 "window.__lastTVGamepadDevice='" + jsString(device) + "';" +
-                "window.dispatchEvent(new CustomEvent('tvgamepad',{detail:{" +
-                "kind:'axes'," +
-                "lx:" + number(lx) + "," +
-                "ly:" + number(ly) + "," +
-                "rx:" + number(rx) + "," +
-                "ry:" + number(ry) + "," +
-                "hatX:" + number(hatX) + "," +
-                "hatY:" + number(hatY) + "," +
-                "lt:" + number(lt) + "," +
-                "rt:" + number(rt) + "," +
-                "source:'gamepad'," +
-                "device:'" + jsString(device) + "'" +
-                "}}));" +
+                "var d={kind:'axes',lx:" + number(lx) + ",ly:" + number(ly) + ",rx:" + number(rx) + ",ry:" + number(ry) +
+                ",hatX:" + number(hatX) + ",hatY:" + number(hatY) + ",lt:" + number(lt) + ",rt:" + number(rt) +
+                ",source:'gamepad',device:'" + jsString(device) + "'};" +
+                "if(window.__TV_INPUT_BRIDGE_READY__){" +
+                " window.dispatchEvent(new CustomEvent('tvgamepad',{detail:d}));" +
+                "}else{" +
+                " var x=Math.abs(d.hatX)>Math.abs(d.lx)?d.hatX:d.lx;" +
+                " var y=Math.abs(d.hatY)>Math.abs(d.ly)?d.hatY:d.ly;" +
+                " window.__tvAxisFallback=window.__tvAxisFallback||{};var s=window.__tvAxisFallback,n=Date.now();" +
+                " function p(name,key,on){if(on&&(!s[name]||n-s[name]>145)){s[name]=n;var t=document.activeElement||document;" +
+                " t.dispatchEvent(new KeyboardEvent('keydown',{key:key,code:key,bubbles:true,cancelable:true}));" +
+                " t.dispatchEvent(new KeyboardEvent('keyup',{key:key,code:key,bubbles:true,cancelable:true}));}if(!on)s[name]=0;}" +
+                " p('l','ArrowLeft',x<-.52);p('r','ArrowRight',x>.52);p('u','ArrowUp',y<-.52);p('d','ArrowDown',y>.52);" +
+                "}" +
                 "}catch(e){}})();";
         webView.evaluateJavascript(js, null);
     }
@@ -421,11 +472,6 @@ public class MainActivity extends Activity {
                 webView.goBack();
                 return true;
             }
-        }
-
-        if (isHomeVisible() && isHomeNavigationKey(keyCode)) {
-            emitInputButton(event, !isGameControllerSource(event.getSource()));
-            return true;
         }
 
         if (isGameControllerSource(event.getSource())) {
