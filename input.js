@@ -18,6 +18,7 @@ const nativeState={
 };
 let lastRightScroll=0;
 let browserPad='';
+let lastStatusText='';
 let prevLT=false,prevRT=false;
 
 function now(){return performance.now()}
@@ -34,7 +35,8 @@ function dominant(a,b){return Math.abs(a)>=Math.abs(b)?a:b}
 
 function setStatus(label,action){
   const el=document.getElementById('gamepadStatus');if(!el)return;
-  el.textContent='🎮 '+label+(action?' · '+action:'');
+  const text='🎮 '+label+(action?' · '+action:'');
+  if(text!==lastStatusText){el.textContent=text;lastStatusText=text}
   el.classList.add('connected');
 }
 function noteNative(d){
