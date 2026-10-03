@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#07111e">
   <meta name="color-scheme" content="dark">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>Xiaomi TV Home V5</title>
+  <title>Xiaomi TV Home V6</title>
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./style.css?v=5.1">
+  <link rel="stylesheet" href="./style.css?v=6">
 </head>
 <body>
   <div class="ambient" aria-hidden="true"></div>
@@ -16,35 +16,36 @@
   <main class="shell" id="homeScreen">
     <header class="topbar">
       <div>
-        <p class="eyebrow">XIAOMI ANDROID TV</p>
+        <p class="eyebrow">XIAOMI ANDROID TV · HOME</p>
         <h1 id="greeting">TV Home</h1>
         <p id="today" class="muted">Đang tải ngày giờ…</p>
       </div>
       <div class="status-card">
         <div id="clock" class="clock">--:--</div>
         <div class="status-line"><span id="networkDot" class="dot"></span><span id="networkText">Đang kiểm tra mạng</span></div>
+        <div id="gamepadStatus" class="device-line">🎮 Chưa thấy tay cầm</div>
       </div>
     </header>
 
     <section class="apps-section">
-      <p class="eyebrow">ỨNG DỤNG CHÍNH</p>
+      <p class="eyebrow">CHỌN NỘI DUNG</p>
       <div class="app-grid">
         <button class="app-card app-tv focusable" data-app="tv">
           <span class="app-icon">📺</span>
           <span class="app-title">Xem TV</span>
-          <span class="app-desc">IPTV · M3U · M3U8 · kênh trực tiếp</span>
+          <span class="app-desc">Mở là phát VTV1 · chuyển VTV1–VTV9 ngay</span>
         </button>
 
         <button class="app-card app-youtube focusable" data-app="youtube">
           <span class="app-icon">▶️</span>
           <span class="app-title">YouTube</span>
-          <span class="app-desc">Phát video hoặc playlist ngay trong TV Home</span>
+          <span class="app-desc">Player YouTube ngay trong TV Home · nhớ video gần nhất</span>
         </button>
 
         <button class="app-card app-game focusable" data-app="game">
           <span class="app-icon">🎮</span>
-          <span class="app-title">Game</span>
-          <span class="app-desc">Snake · Pong · 2048</span>
+          <span class="app-title">Game Center</span>
+          <span class="app-desc">10 game · Logitech F710 / gamepad / remote / bàn phím</span>
         </button>
       </div>
     </section>
@@ -56,8 +57,8 @@
     </section>
 
     <footer>
-      <span>Xiaomi TV Home V5.1</span>
-      <span>Remote · Logitech F710 · chuột · bàn phím</span>
+      <span>Xiaomi TV Home V6</span>
+      <span>F710: D-pad/Analog · A chọn · B quay lại · Start tạm dừng game</span>
     </footer>
   </main>
 
@@ -76,8 +77,8 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
-  <script src="./app.js?v=5.1"></script>
-  <script src="./media.js?v=5.1"></script>
-  <script src="./games.js?v=5.1"></script>\n  <script src="./input.js?v=5.1"></script>
+  <script src="./app.js?v=6"></script>
+  <script src="./media.js?v=6"></script>
+  <script src="./games.js?v=6"></script>
 </body>
 </html>

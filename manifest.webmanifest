@@ -1,7 +1,7 @@
 {
   "name":"Xiaomi TV Home",
   "short_name":"TV Home",
-  "description":"Trang TV tối giản cho Xiaomi Android TV: xem TV, YouTube và Game.",
+  "description":"TV Home cho Xiaomi Android TV: VTV trực tiếp, YouTube nhúng và Game Center hỗ trợ gamepad.",
   "start_url":"./",
   "scope":"./",
   "display":"standalone",
