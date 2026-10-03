@@ -26,6 +26,7 @@ public class MainActivity extends Activity {
 
     private static final String HOME_URL = "https://uschinsu-spec.github.io/TV/";
     private static final float STICK_DEADZONE = 0.16f;
+    private static final float AXIS_CHANGE_EPSILON = 0.025f;
     private static final long AXIS_DISPATCH_INTERVAL_MS = 20L;
 
     private FrameLayout root;
@@ -33,6 +34,9 @@ public class MainActivity extends Activity {
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
     private long lastAxisDispatchAt = 0L;
+    private int lastAxisDeviceId = -1;
+    private boolean hasLastAxes = false;
+    private float lastLx, lastLy, lastRx, lastRy, lastHatX, lastHatY, lastLt, lastRt;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -40,16 +44,14 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().addFlags(
-                WindowManager.LayoutParams.FLAG_FULLSCREEN |
-                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-        );
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         enterImmersiveMode();
 
         root = new FrameLayout(this);
         root.setBackgroundColor(0xFF000000);
         setContentView(root);
 
+        WebView.setWebContentsDebuggingEnabled(false);
         webView = new WebView(this);
         webView.setBackgroundColor(0xFF000000);
         webView.setFocusable(true);
@@ -102,7 +104,7 @@ public class MainActivity extends Activity {
                 view.evaluateJavascript(
                         "(function(){try{" +
                         "window.__TV_NATIVE_GAMEPAD__=true;" +
-                        "window.__TV_NATIVE_APP_VERSION__='1.7';" +
+                        "window.__TV_NATIVE_APP_VERSION__='1.8';" +
                         "document.documentElement.setAttribute('tabindex','-1');" +
                         "document.documentElement.focus();" +
                         "}catch(e){}})();",
@@ -112,20 +114,6 @@ public class MainActivity extends Activity {
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, android.os.Message resultMsg) {
-                WebView.HitTestResult result = view.getHitTestResult();
-                String url = result != null ? result.getExtra() : null;
-                if (url != null) {
-                    view.loadUrl(url);
-                    return false;
-                }
-                WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
-                transport.setWebView(view);
-                resultMsg.sendToTarget();
-                return true;
-            }
-
             @Override
             public void onShowCustomView(View view, CustomViewCallback callback) {
                 if (customView != null) {
@@ -369,6 +357,47 @@ public class MainActivity extends Activity {
         return String.format(Locale.US, "%.4f", value);
     }
 
+    private boolean axisChanged(float oldValue, float newValue) {
+        return Math.abs(oldValue - newValue) >= AXIS_CHANGE_EPSILON ||
+                (oldValue != 0f && newValue == 0f) ||
+                (oldValue == 0f && newValue != 0f);
+    }
+
+    private boolean shouldDispatchAxes(
+            int deviceId,
+            float lx, float ly, float rx, float ry,
+            float hatX, float hatY, float lt, float rt
+    ) {
+        if (!hasLastAxes || deviceId != lastAxisDeviceId) {
+            return true;
+        }
+        return axisChanged(lastLx, lx) ||
+                axisChanged(lastLy, ly) ||
+                axisChanged(lastRx, rx) ||
+                axisChanged(lastRy, ry) ||
+                axisChanged(lastHatX, hatX) ||
+                axisChanged(lastHatY, hatY) ||
+                axisChanged(lastLt, lt) ||
+                axisChanged(lastRt, rt);
+    }
+
+    private void rememberAxes(
+            int deviceId,
+            float lx, float ly, float rx, float ry,
+            float hatX, float hatY, float lt, float rt
+    ) {
+        hasLastAxes = true;
+        lastAxisDeviceId = deviceId;
+        lastLx = lx;
+        lastLy = ly;
+        lastRx = rx;
+        lastRy = ry;
+        lastHatX = hatX;
+        lastHatY = hatY;
+        lastLt = lt;
+        lastRt = rt;
+    }
+
     private void emitGamepadAxes(MotionEvent event) {
         if (webView == null) return;
         long now = SystemClock.uptimeMillis();
@@ -398,6 +427,12 @@ public class MainActivity extends Activity {
                 triggerAxis(event, MotionEvent.AXIS_RTRIGGER),
                 triggerAxis(event, MotionEvent.AXIS_GAS)
         );
+
+        int deviceId = event.getDeviceId();
+        if (!shouldDispatchAxes(deviceId, lx, ly, rx, ry, hatX, hatY, lt, rt)) {
+            return;
+        }
+        rememberAxes(deviceId, lx, ly, rx, ry, hatX, hatY, lt, rt);
 
         String device = controllerDeviceName(event.getDevice());
         String js = "(function(){try{" +
@@ -476,22 +511,18 @@ public class MainActivity extends Activity {
         enterImmersiveMode();
         if (webView != null) {
             webView.onResume();
+            webView.resumeTimers();
             webView.requestFocus(View.FOCUS_DOWN);
         }
     }
 
     @Override
     protected void onPause() {
-        if (webView != null) webView.onPause();
-        super.onPause();
-    }
-
-    @Override
-    public void onTrimMemory(int level) {
-        super.onTrimMemory(level);
-        if (webView != null && level >= TRIM_MEMORY_RUNNING_LOW) {
-            webView.clearCache(false);
+        if (webView != null) {
+            webView.pauseTimers();
+            webView.onPause();
         }
+        super.onPause();
     }
 
     @Override
