@@ -19,9 +19,13 @@ const nativeState={
 let lastRightScroll=0;
 let browserPad='';
 let prevLT=false,prevRT=false;
+let gameMode=false;
 
 function now(){return performance.now()}
 function nativeRecent(){return now()-(nativeState.updatedAt||0)<420}
+function nativeAvailable(){
+  return !!(window.__TV_NATIVE_APP_VERSION__||window.__TV_NATIVE_GAMEPAD__||nativeState.device||window.__lastTVGamepadDevice);
+}
 function toast(msg){try{window.showToast?.(msg)}catch(e){}}
 function gameActive(){return !!window.tvGameActive}
 function panelOpen(){return document.getElementById('appPanel')?.classList.contains('open')}
@@ -159,11 +163,13 @@ function browserSnapshot(gp){
 }
 function normalizedState(){
   let s;
-  if(nativeRecent()){
+  // Inside Android APK game mode, keep using cached native state even while sticks are centered.
+  // This prevents navigator.getGamepads() from being called every animation frame.
+  if(nativeRecent()||(gameMode&&nativeAvailable())){
     s={
       lx:nativeState.lx,ly:nativeState.ly,rx:nativeState.rx,ry:nativeState.ry,
       hatX:nativeState.hatX,hatY:nativeState.hatY,lt:nativeState.lt,rt:nativeState.rt,
-      buttons:nativeState.buttons,device:nativeState.device,source:'native'
+      buttons:nativeState.buttons,device:nativeState.device||window.__lastTVGamepadDevice||'Native Gamepad',source:'native'
     };
   }else{
     s=browserSnapshot(activeBrowserPad());
@@ -183,7 +189,8 @@ function normalizedState(){
 }
 
 function pollBrowserGamepad(){
-  const gp=activeBrowserPad();
+  const allowBrowserFallback=!(gameMode&&nativeAvailable());
+  const gp=allowBrowserFallback?activeBrowserPad():null;
   if(gp&&!nativeRecent()&&!gameActive()){
     browserPad=gp.id||browserPad;
     setStatus(browserPad,'BROWSER FALLBACK');
@@ -199,13 +206,20 @@ function pollBrowserGamepad(){
     }
   }
   // Menus do not need 60 FPS input scanning. 100 ms is responsive enough for TV navigation.
-  setTimeout(pollBrowserGamepad,gameActive()?250:(gp?100:350));
+  setTimeout(pollBrowserGamepad,gameMode&&nativeAvailable()?500:(gameActive()?250:(gp?100:350)));
 }
 setTimeout(pollBrowserGamepad,150);
 
 window.TVInput={
-  get native(){return nativeRecent()},
-  get device(){return nativeState.device||browserPad||''},
+  get native(){return nativeRecent()||(gameMode&&nativeAvailable())},
+  get device(){return nativeState.device||browserPad||window.__lastTVGamepadDevice||''},
+  get gameMode(){return gameMode},
+  setGameMode(on){
+    gameMode=!!on;
+    if(gameMode&&nativeAvailable()){
+      setStatus(nativeState.device||window.__lastTVGamepadDevice||'Native Gamepad','GAME MODE');
+    }
+  },
   readGamepadState:normalizedState
 };
 })();

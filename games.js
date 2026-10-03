@@ -18,6 +18,7 @@ const GAMES=[
 ];
 
 window.renderGameApp=function(){
+  window.TVInput?.setGameMode?.(true);
   const root=$('panelBody');
   root.innerHTML='<div class="game-card"><p class="game-menu-note">Logitech F710: nên để công tắc XInput. D-pad/analog di chuyển · A hành động · B thoát game · Start tạm dừng.</p><div class="game-select">'+
     GAMES.map(g=>'<button class="btn game-choice focusable" data-game="'+g[0]+'">'+g[1]+'<small>'+g[2]+'</small></button>').join('')+
@@ -26,18 +27,25 @@ window.renderGameApp=function(){
 };
 function cleanup(){cancelAnimationFrame(raf);raf=0;last=0;paused=false;keys.clear();pressed.clear();state=null;window.tvGameActive=false}
 window.stopActiveGame=cleanup;
-function exitGame(){window.tvGameInputLockUntil=performance.now()+550;cleanup();document.body.classList.remove('game-running');document.getElementById('appPanel')?.classList.remove('game-running');const st=$('gameStage');if(st)st.innerHTML='<div class="status">Chọn một game để bắt đầu.</div>';const gs=$('gameState');if(gs)gs.textContent='Chọn game';setTimeout(()=>document.querySelector('[data-game="'+game+'"]')?.focus(),40)}
+function exitGame(){window.tvGameInputLockUntil=performance.now()+550;cleanup();const st=$('gameStage');if(st)st.innerHTML='<div class="status">Đã thoát game. Chọn game khác phía trên.</div>';const gs=$('gameState');if(gs)gs.textContent='Đã thoát game';setTimeout(()=>document.querySelector('[data-game="'+game+'"]')?.focus(),20)}
 function setupCanvas(w=960,h=540){const stage=$('gameStage');stage.innerHTML='<canvas id="gameCanvas" width="'+w+'" height="'+h+'"></canvas>';canvas=$('gameCanvas');ctx=canvas.getContext('2d');return canvas}
 function firstPad(){const list=navigator.getGamepads?navigator.getGamepads():[];for(const p of list)if(p&&p.connected)return p;return null}
+function cleanAxis(v,dz=.18){
+  v=Number(v)||0;
+  const a=Math.abs(v);
+  if(a<=dz)return 0;
+  return Math.sign(v)*Math.min(1,(a-dz)/(1-dz));
+}
 function readPad(){
   const bridge=window.TVInput?.readGamepadState?.();
   let s;
   if(bridge){
-    s={x:Number(bridge.x)||0,y:Number(bridge.y)||0,a:!!bridge.a,b:!!bridge.b,start:!!bridge.start,up:!!bridge.up,down:!!bridge.down,left:!!bridge.left,right:!!bridge.right};
+    s={x:cleanAxis(bridge.x),y:cleanAxis(bridge.y),a:!!bridge.a,b:!!bridge.b,start:!!bridge.start,up:!!bridge.up,down:!!bridge.down,left:!!bridge.left,right:!!bridge.right};
   }else{
+    // Browser-only fallback. Android APK native game mode should never enter this path.
     const p=firstPad();if(!p)return{x:0,y:0,a:false,b:false,start:false,aEdge:false,bEdge:false,startEdge:false,upEdge:false,downEdge:false,leftEdge:false,rightEdge:false};
     const ax=p.axes||[],btn=p.buttons||[],rawX=Math.abs(ax[0]||0)>.22?(ax[0]||0):0,rawY=Math.abs(ax[1]||0)>.22?(ax[1]||0):0;
-    s={x:rawX,y:rawY,a:!!btn[0]?.pressed,b:!!btn[1]?.pressed,start:!!btn[9]?.pressed,up:!!btn[12]?.pressed||rawY<-.55,down:!!btn[13]?.pressed||rawY>.55,left:!!btn[14]?.pressed||rawX<-.55,right:!!btn[15]?.pressed||rawX>.55};
+    s={x:cleanAxis(rawX),y:cleanAxis(rawY),a:!!btn[0]?.pressed,b:!!btn[1]?.pressed,start:!!btn[9]?.pressed,up:!!btn[12]?.pressed||rawY<-.55,down:!!btn[13]?.pressed||rawY>.55,left:!!btn[14]?.pressed||rawX<-.55,right:!!btn[15]?.pressed||rawX>.55};
   }
   s.aEdge=s.a&&!padPrev.a;s.bEdge=s.b&&!padPrev.b;s.startEdge=s.start&&!padPrev.start;s.upEdge=s.up&&!padPrev.up;s.downEdge=s.down&&!padPrev.down;s.leftEdge=s.left&&!padPrev.left;s.rightEdge=s.right&&!padPrev.right;padPrev=s;return s;
 }
@@ -49,11 +57,10 @@ function input(){
 function bg(){ctx.fillStyle='#050b12';ctx.fillRect(0,0,canvas.width,canvas.height)}
 function text(msg,x,y,size=24,align='left'){ctx.fillStyle='#eef5ff';ctx.font='700 '+size+'px Arial';ctx.textAlign=align;ctx.fillText(msg,x,y)}
 function loop(update,draw){
-  const minFrameMs=1000/30;
-  function frame(t){if(!window.tvGameActive)return;if(last&&t-last<minFrameMs){raf=requestAnimationFrame(frame);return}const dt=Math.min(.05,(t-last)/1000||.033);last=t;const c=input();if(c.bEdge){exitGame();return}if(c.startEdge){paused=!paused;$('gameState').textContent=paused?'Tạm dừng':'Đang chơi'}if(!paused)update(dt,c);draw(c);raf=requestAnimationFrame(frame)}raf=requestAnimationFrame(frame)
+  function frame(t){if(!window.tvGameActive)return;const dt=Math.min(.04,(t-last)/1000||.016);last=t;const c=input();if(c.bEdge){exitGame();return}if(c.startEdge){paused=!paused;$('gameState').textContent=paused?'Tạm dừng':'Đang chơi'}if(!paused)update(dt,c);draw(c);raf=requestAnimationFrame(frame)}raf=requestAnimationFrame(frame)
 }
 function cycleGameNative(delta){const i=Math.max(0,GAMES.findIndex(g=>g[0]===game));startGame(GAMES[(i+delta+GAMES.length)%GAMES.length][0])}
-function startGame(name){cleanup();game=name;window.tvGameActive=true;padPrev={};document.body.classList.add('game-running');document.getElementById('appPanel')?.classList.add('game-running');window.requestTVFullscreen?.();$('gameState').textContent=(GAMES.find(g=>g[0]===name)?.[1]||name)+' · B/Back để chọn game khác';$('gameScore').textContent='Điểm: 0';({snake:startSnake,pong:startPong,breakout:startBreakout,shooter:startShooter,racer:startRacer,flappy:startFlappy,asteroids:startAsteroids,catcher:startCatcher,'2048':start2048,reaction:startReaction}[name])?.()}
+function startGame(name){cleanup();game=name;window.tvGameActive=true;padPrev={};$('gameState').textContent='Đang chơi '+(GAMES.find(g=>g[0]===name)?.[1]||name);$('gameScore').textContent='Điểm: 0';({snake:startSnake,pong:startPong,breakout:startBreakout,shooter:startShooter,racer:startRacer,flappy:startFlappy,asteroids:startAsteroids,catcher:startCatcher,'2048':start2048,reaction:startReaction}[name])?.()}
 
 function startSnake(){
   setupCanvas();const cell=24,cols=40,rows=22;state={body:[{x:10,y:10},{x:9,y:10},{x:8,y:10}],dir:{x:1,y:0},next:{x:1,y:0},food:{x:22,y:10},acc:0,score:0,over:false};
