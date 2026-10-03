@@ -20,7 +20,7 @@ function playUrl(video,urls,label,attempt=0){
   const status=$('tvStatus');if(status)status.textContent='Đang tải '+label+'…';
   const fail=()=>{if(Array.isArray(urls)&&attempt+1<urls.length){if(status)status.textContent='Đổi nguồn dự phòng cho '+label+'…';playUrl(video,urls,label,attempt+1)}else{if(status)status.textContent=label+' hiện không phát được. Hãy thử kênh khác.';showToast('Không phát được '+label)}};
   if(video.canPlayType('application/vnd.apple.mpegurl')){video.src=url;video.play().then(()=>{if(status)status.textContent='Đang xem '+label}).catch(fail)}
-  else if(window.Hls&&Hls.isSupported()){hls=new Hls({enableWorker:true,lowLatencyMode:true,backBufferLength:30});hls.loadSource(url);hls.attachMedia(video);hls.on(Hls.Events.MANIFEST_PARSED,()=>video.play().then(()=>{if(status)status.textContent='Đang xem '+label}).catch(()=>{}));hls.on(Hls.Events.ERROR,(e,d)=>{if(d.fatal)fail()})}
+  else if(window.Hls&&Hls.isSupported()){hls=new Hls({enableWorker:true,lowLatencyMode:false,backBufferLength:12,maxBufferLength:20});hls.loadSource(url);hls.attachMedia(video);hls.on(Hls.Events.MANIFEST_PARSED,()=>video.play().then(()=>{if(status)status.textContent='Đang xem '+label}).catch(()=>{}));hls.on(Hls.Events.ERROR,(e,d)=>{if(d.fatal)fail()})}
   else{video.src=url;video.play().catch(fail)}
 }
 function parseM3U(text){const lines=String(text||'').split(/\r?\n/),out=[];let name='';lines.forEach(line=>{line=line.trim();if(!line)return;if(line.startsWith('#EXTINF:')){const i=line.lastIndexOf(',');name=i>=0?line.slice(i+1).trim():'Kênh'}else if(line[0]!=='#'){out.push({name:name||('Kênh '+(out.length+1)),url:line});name=''}});return out.slice(0,500)}
