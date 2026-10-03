@@ -6,112 +6,95 @@
   <meta name="theme-color" content="#07111e">
   <meta name="color-scheme" content="dark">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>Xiaomi TV Hub</title>
+  <title>Xiaomi TV Toolbox V4</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
   <div class="ambient" aria-hidden="true"></div>
 
-  <main class="shell" id="app">
+  <main class="shell">
     <header class="topbar">
-      <div class="brand">
-        <p class="eyebrow">XIAOMI ANDROID TV HUB</p>
-        <h1 id="greeting">Tiện ích TV</h1>
+      <div>
+        <p class="eyebrow">XIAOMI ANDROID TV · DIRECT ONLY</p>
+        <h1 id="greeting">TV Toolbox</h1>
         <p id="today" class="muted">Đang tải ngày giờ…</p>
       </div>
       <div class="status-card">
         <div id="clock" class="clock">--:--</div>
-        <div class="status-line">
-          <span id="networkDot" class="dot"></span>
-          <span id="networkText">Đang kiểm tra mạng</span>
-        </div>
-        <div id="connectionText" class="connection muted-small"></div>
+        <div class="status-line"><span id="networkDot" class="dot"></span><span id="networkText">Đang kiểm tra mạng</span></div>
+        <div id="connectionText" class="muted-small"></div>
       </div>
     </header>
 
-    <section class="quick-bar" aria-label="Mở nhanh địa chỉ web">
-      <input id="urlInput" class="focusable" type="text" inputmode="url" autocomplete="off"
-        placeholder="Nhập địa chỉ web, ví dụ: https://example.com" aria-label="Địa chỉ web">
-      <button id="openUrlBtn" class="btn primary focusable">Mở trang</button>
-    </section>
+    <section class="section hero-section">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">DÙNG NGAY TRÊN TV</p>
+          <h2>20 tiện ích chạy trực tiếp</h2>
+        </div>
+        <span class="hint">Không mở website ngoài · Remote: ← ↑ ↓ → · OK · Back</span>
+      </div>
 
-    <section class="search-panel" aria-label="Tìm kiếm Google">
-      <span class="search-icon" aria-hidden="true">⌕</span>
-      <input id="searchInput" class="focusable" type="text" inputmode="search" autocomplete="off"
-        placeholder="Tìm kiếm Google…" aria-label="Tìm kiếm Google">
-      <button id="searchBtn" class="btn primary focusable">Tìm Google</button>
+      <div class="direct-tools-grid">
+        <button class="direct-card focusable" data-direct-tool="timer"><span>⏱️</span><b>Timer</b><small>Đếm ngược</small></button>
+        <button class="direct-card focusable" data-direct-tool="stopwatch"><span>⏲️</span><b>Stopwatch</b><small>Bấm giờ</small></button>
+        <button class="direct-card focusable" data-direct-tool="pomodoro"><span>🍅</span><b>Pomodoro</b><small>25 / 5 phút</small></button>
+        <button class="direct-card focusable" data-direct-tool="alarm"><span>⏰</span><b>Báo thức</b><small>Hẹn giờ trong ngày</small></button>
+
+        <button class="direct-card focusable" data-direct-tool="calculator"><span>🧮</span><b>Máy tính</b><small>Tính ngay</small></button>
+        <button class="direct-card focusable" data-direct-tool="convert"><span>🔁</span><b>Đổi đơn vị</b><small>Độ dài / nhiệt / khối lượng</small></button>
+        <button class="direct-card focusable" data-direct-tool="calendar"><span>📅</span><b>Lịch</b><small>Xem tháng</small></button>
+        <button class="direct-card focusable" data-direct-tool="notes"><span>📝</span><b>Ghi chú</b><small>Lưu trên TV</small></button>
+
+        <button class="direct-card focusable" data-direct-tool="bigtext"><span>🔤</span><b>Bảng chữ lớn</b><small>Hiển thị toàn màn hình</small></button>
+        <button class="direct-card focusable" data-direct-tool="random"><span>🎲</span><b>Random</b><small>Số ngẫu nhiên</small></button>
+        <button class="direct-card focusable" data-direct-tool="password"><span>🔐</span><b>Tạo mật khẩu</b><small>Tạo offline</small></button>
+        <button class="direct-card focusable" data-direct-tool="video"><span>🎬</span><b>Video Local</b><small>USB / bộ nhớ TV</small></button>
+
+        <button class="direct-card focusable" data-direct-tool="music"><span>🎵</span><b>Nhạc Local</b><small>USB / bộ nhớ TV</small></button>
+        <button class="direct-card focusable" data-direct-tool="iptv"><span>📺</span><b>IPTV Player</b><small>Phát trong TV Hub</small></button>
+        <button class="direct-card focusable" data-direct-tool="network"><span>📡</span><b>Test mạng</b><small>RTT / kết nối</small></button>
+        <button class="direct-card focusable" data-direct-tool="device"><span>ⓘ</span><b>Thông tin TV</b><small>Màn hình / CPU / RAM</small></button>
+
+        <button class="direct-card focusable" data-direct-tool="screen"><span>🖥️</span><b>Test màn hình</b><small>Màu / gradient</small></button>
+        <button class="direct-card focusable" data-direct-tool="overscan"><span>📐</span><b>Căn Overscan</b><small>Kiểm tra cắt mép</small></button>
+        <button class="direct-card focusable" data-direct-tool="speaker"><span>🔊</span><b>Test loa</b><small>Trái / phải</small></button>
+        <button class="direct-card focusable" data-direct-tool="remote"><span>🎮</span><b>Test remote</b><small>Xem mã phím</small></button>
+      </div>
     </section>
 
     <section class="section">
       <div class="section-head">
-        <div>
-          <p class="eyebrow">TRUY CẬP NHANH</p>
-          <h2>Tiện ích V1 + mở rộng V2</h2>
-        </div>
-        <span class="hint">Remote: ← ↑ ↓ → · OK/Enter · Back/Esc</span>
+        <div><p class="eyebrow">HỆ THỐNG TV</p><h2>Điều khiển nhanh</h2></div>
       </div>
-      <div id="tiles" class="tiles" aria-label="Các lối tắt"></div>
-
-      <div class="actions-row v1-actions" aria-label="Các nút V1">
-        <button id="fullscreenBtn" class="btn focusable">⛶ Toàn màn hình <small id="fullscreenState">Tắt</small></button>
-        <button id="reloadBtn" class="btn focusable">↻ Tải lại</button>
-        <button id="settingsBtn" class="btn focusable">⚙ Cài đặt ô</button>
-      </div>
-    </section>
-
-    <section class="section direct-section">\n      <div class="section-head">\n        <div><p class="eyebrow">DÙNG NGAY TRÊN TV</p><h2>12 tiện ích chạy trực tiếp</h2></div>\n        <span class="hint">Không chuyển sang website khác</span>\n      </div>\n      <div class="direct-tools-grid">\n        <button class="direct-card focusable" data-direct-tool="timer"><span>⏱️</span><b>Timer</b><small>Đếm ngược</small></button>\n        <button class="direct-card focusable" data-direct-tool="stopwatch"><span>⏲️</span><b>Stopwatch</b><small>Bấm giờ</small></button>\n        <button class="direct-card focusable" data-direct-tool="calculator"><span>🧮</span><b>Máy tính</b><small>Tính ngay</small></button>\n        <button class="direct-card focusable" data-direct-tool="calendar"><span>📅</span><b>Lịch</b><small>Xem tháng</small></button>\n        <button class="direct-card focusable" data-direct-tool="notes"><span>📝</span><b>Ghi chú</b><small>Lưu trên TV</small></button>\n        <button class="direct-card focusable" data-direct-tool="video"><span>🎬</span><b>Video Player</b><small>File / URL</small></button>\n        <button class="direct-card focusable" data-direct-tool="music"><span>🎵</span><b>Music Player</b><small>File / URL</small></button>\n        <button class="direct-card focusable" data-direct-tool="iptv"><span>📺</span><b>IPTV</b><small>M3U / stream</small></button>\n        <button class="direct-card focusable" data-direct-tool="network"><span>📡</span><b>Test mạng</b><small>Độ trễ / tải</small></button>\n        <button class="direct-card focusable" data-direct-tool="screen"><span>🖥️</span><b>Test màn hình</b><small>Màu / gradient</small></button>\n        <button class="direct-card focusable" data-direct-tool="speaker"><span>🔊</span><b>Test loa</b><small>Trái / phải</small></button>\n        <button class="direct-card focusable" data-direct-tool="remote"><span>🎮</span><b>Test remote</b><small>Xem mã phím</small></button>\n      </div>\n    </section>\n\n    <section class="section">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">TV TOOLS</p>
-          <h2>Tiện ích nhanh</h2>
-        </div>
-      </div>
-      <div class="tools-grid">
-        <button id="wakeBtn" class="tool focusable"><span>☀</span><b>Giữ màn hình sáng</b><small id="wakeState">Tắt</small></button>
-        <button id="performanceBtn" class="tool focusable"><span>⚡</span><b>Chế độ nhẹ</b><small id="performanceState">Tắt</small></button>
-        <button id="sizeBtn" class="tool focusable"><span>🔎</span><b>Cỡ giao diện</b><small id="sizeState">Chuẩn</small></button>
-        <button id="screensaverBtn" class="tool focusable"><span>🌙</span><b>Màn hình chờ</b><small id="screensaverState">8 phút</small></button>
-        <button id="infoBtn" class="tool focusable"><span>ⓘ</span><b>Thông tin TV</b><small>Xem thiết bị</small></button>
-        <button id="installBtn" class="tool focusable hidden"><span>＋</span><b>Cài như ứng dụng</b><small>Thêm vào TV</small></button>
+      <div class="system-grid">
+        <button id="fullscreenBtn" class="system-card focusable"><span>⛶</span><b>Toàn màn hình</b><small id="fullscreenState">Tắt</small></button>
+        <button id="wakeBtn" class="system-card focusable"><span>☀</span><b>Giữ màn hình sáng</b><small id="wakeState">Tắt</small></button>
+        <button id="performanceBtn" class="system-card focusable"><span>⚡</span><b>Chế độ nhẹ</b><small id="performanceState">Tắt</small></button>
+        <button id="sizeBtn" class="system-card focusable"><span>🔎</span><b>Cỡ giao diện</b><small id="sizeState">Chuẩn</small></button>
+        <button id="screensaverBtn" class="system-card focusable"><span>🌙</span><b>Màn hình chờ</b><small id="screensaverState">8 phút</small></button>
+        <button id="reloadBtn" class="system-card focusable"><span>↻</span><b>Tải lại Hub</b><small>Làm mới</small></button>
       </div>
     </section>
 
     <footer>
-      <span id="versionText">Xiaomi TV Hub V3.0</span>
-      <span>GitHub Pages · Không quảng cáo · Không theo dõi</span>
+      <span id="versionText">Xiaomi TV Toolbox V4.0</span>
+      <span>Direct-only · Không launcher link · Không quảng cáo</span>
     </footer>
   </main>
 
-  <dialog id="settingsDialog" class="dialog">
-    <form id="settingsForm" class="dialog-card">
-      <div class="dialog-head">
-        <div><p class="eyebrow">TÙY BIẾN</p><h2>Chỉnh 12 ô launcher</h2></div>
-        <button type="button" class="icon-btn focusable close-dialog" aria-label="Đóng">✕</button>
-      </div>
-      <p class="muted dialog-note">Tên, biểu tượng và URL được lưu ngay trên TV bằng localStorage.</p>
-      <div id="settingsList" class="settings-list"></div>
-      <div class="dialog-actions">
-        <button type="button" id="resetBtn" class="btn danger focusable">Khôi phục mặc định</button>
-        <button type="submit" class="btn primary focusable">Lưu thay đổi</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="infoDialog" class="dialog info-dialog">
+  <dialog id="toolDialog" class="dialog">
     <div class="dialog-card">
       <div class="dialog-head">
-        <div><p class="eyebrow">THIẾT BỊ</p><h2>Thông tin Android TV</h2></div>
+        <div><p class="eyebrow">TV TOOLBOX</p><h2 id="toolTitle">Tiện ích</h2><p id="toolSubtitle" class="muted-small"></p></div>
         <button type="button" class="icon-btn focusable close-dialog" aria-label="Đóng">✕</button>
       </div>
-      <div id="deviceInfo" class="info-grid"></div>
-      <div class="dialog-actions end">
-        <button type="button" class="btn primary focusable close-dialog">Đóng</button>
-      </div>
+      <div id="toolBody" class="tool-body"></div>
     </div>
   </dialog>
 
-\n  <dialog id="directToolDialog" class="dialog direct-dialog">\n    <div class="dialog-card direct-dialog-card">\n      <div class="dialog-head">\n        <div><p class="eyebrow">TV TOOLBOX</p><h2 id="directToolTitle">Tiện ích</h2><p id="directToolSubtitle" class="muted-small"></p></div>\n        <button type="button" class="icon-btn focusable close-dialog" aria-label="Đóng">✕</button>\n      </div>\n      <div id="directToolBody" class="direct-tool-body"></div>\n    </div>\n  </dialog>\n\n  <div id="screensaver" class="screensaver" aria-hidden="true">
+  <div id="screensaver" class="screensaver" aria-hidden="true">
     <div id="screensaverContent" class="screensaver-content">
       <div id="screensaverClock">--:--</div>
       <div id="screensaverDate"></div>
@@ -120,6 +103,7 @@
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="./app.js"></script>\n  <script src="./tools.js"></script>
+  <script src="./app.js"></script>
+  <script src="./tools.js"></script>
 </body>
 </html>

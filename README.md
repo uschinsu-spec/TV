@@ -1,41 +1,21 @@
-# Xiaomi TV Hub V3
+# Xiaomi TV Toolbox V4 — Direct Only
 
-TV Hub tối ưu cho Xiaomi Android TV, giữ launcher V1/V2 và bổ sung **12 tiện ích chạy trực tiếp trong trang**.
+Bản V4 đã **xóa toàn bộ launcher website, Google, YouTube, ô mở URL và các tiện ích chỉ dẫn sang trang khác**.
 
-**Mở trên TV:** https://uschinsu-spec.github.io/TV/
+Trang chính chỉ còn công cụ chạy trực tiếp trong TV Hub.
 
-## 12 tiện ích trực tiếp
+## 20 tiện ích trực tiếp
 
-1. Timer — đếm ngược và báo âm thanh.
-2. Stopwatch — bấm giờ.
-3. Máy tính — điều khiển bằng remote.
-4. Lịch — xem và chuyển tháng.
-5. Ghi chú — lưu localStorage trên TV.
-6. Video Player — file từ bộ nhớ/USB hoặc URL video.
-7. Music Player — file audio hoặc URL.
-8. IPTV Player — stream URL, file/nội dung M3U và danh sách kênh.
-9. Test mạng — online, connection API, RTT/downlink và phản hồi GitHub Pages.
-10. Test màn hình — màu đơn, gradient, checkerboard toàn màn hình.
-11. Test loa — tone trái/phải/cả hai bằng Web Audio.
-12. Test remote — xem key, keyCode và code của remote Xiaomi.
+Timer, Stopwatch, Pomodoro, Báo thức, Máy tính, Đổi đơn vị, Lịch, Ghi chú, Bảng chữ lớn, Random, Tạo mật khẩu, Video Local, Nhạc Local, IPTV Player, Test mạng, Thông tin TV, Test màn hình, Căn Overscan, Test loa và Test remote.
 
-Các tiện ích này mở trong chính TV Hub, không chuyển sang website khác.
+Video/Nhạc chỉ dùng file local từ TV/USB. IPTV nhận stream/M3U nhưng phát ngay trong TV Hub, không chuyển sang website khác.
 
-## V1/V2 vẫn giữ
+## Điều khiển hệ thống
 
-- 12 ô launcher tùy biến.
-- Thanh mở URL riêng và tìm Google.
-- Đồng hồ, ngày, trạng thái mạng.
-- Fullscreen, Reload, cài đặt ô.
-- Wake Lock, chế độ nhẹ, UI lớn, screensaver, thông tin thiết bị và PWA khi browser hỗ trợ.
-- Điều khiển D-pad + OK/Enter + Back/Escape.
+Fullscreen, Wake Lock, Chế độ nhẹ, Cỡ UI, Screensaver và Reload.
 
-## Lưu ý IPTV
+## Mở trên TV
 
-TV Hub phát HLS/M3U8 bằng khả năng media native của browser/firmware. Nếu browser Xiaomi cụ thể không hỗ trợ HLS native, stream đó có thể không phát dù URL đúng.
+https://uschinsu-spec.github.io/TV/
 
-## GitHub Pages
-
-Settings → Pages → Deploy from a branch → main → /(root).
-
-Cache hiện tại: xiaomi-tv-hub-v3.
+Cache V4: `xiaomi-tv-toolbox-v4`.
