@@ -1,0 +1,9 @@
+{
+  "name": "TV Utility",
+  "short_name": "TV Utility",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#050a12",
+  "theme_color": "#08111f",
+  "lang": "vi"
+}

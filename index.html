@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#08111f" />
+  <meta name="color-scheme" content="dark" />
+  <title>TV Utility</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-glow bg-glow-a"></div>
+  <div class="bg-glow bg-glow-b"></div>
+
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">ANDROID TV DASHBOARD</p>
+        <h1 id="greeting">Tiện ích TV</h1>
+        <p id="today" class="muted">Đang tải ngày giờ…</p>
+      </div>
+
+      <div class="clock-card" aria-label="Đồng hồ">
+        <div id="clock" class="clock">--:--</div>
+        <div class="status-row">
+          <span id="networkDot" class="dot"></span>
+          <span id="networkText">Đang kiểm tra mạng</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="quick-bar" aria-label="Mở nhanh địa chỉ web">
+      <input id="urlInput" class="focusable" type="text" inputmode="url" autocomplete="off"
+        placeholder="Nhập địa chỉ web, ví dụ: https://example.com" aria-label="Địa chỉ web" />
+      <button id="openUrlBtn" class="btn primary focusable">Mở trang</button>
+    </section>
+
+    <section>
+      <div class="section-title-row">
+        <h2>Truy cập nhanh</h2>
+        <span class="hint">Remote: phím mũi tên + OK/Enter</span>
+      </div>
+
+      <div id="tiles" class="tiles" aria-label="Các tiện ích"></div>
+    </section>
+
+    <section class="actions-row">
+      <button id="fullscreenBtn" class="btn focusable">⛶ Toàn màn hình</button>
+      <button id="reloadBtn" class="btn focusable">↻ Tải lại</button>
+      <button id="settingsBtn" class="btn focusable">⚙ Cài đặt ô</button>
+    </section>
+  </main>
+
+  <dialog id="settingsDialog" class="dialog">
+    <form method="dialog" class="dialog-card" id="settingsForm">
+      <div class="dialog-head">
+        <div>
+          <p class="eyebrow">TÙY BIẾN</p>
+          <h2>Cài đặt truy cập nhanh</h2>
+        </div>
+        <button class="icon-btn focusable" value="cancel" aria-label="Đóng">✕</button>
+      </div>
+
+      <div id="settingsList" class="settings-list"></div>
+
+      <div class="dialog-actions">
+        <button type="button" id="resetBtn" class="btn danger focusable">Khôi phục mặc định</button>
+        <button type="submit" id="saveBtn" class="btn primary focusable">Lưu thay đổi</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
