@@ -3,9 +3,8 @@
 
 window.CustomTVGames=window.CustomTVGames||{};
 
-const W=1280,H=720,TARGET_FPS=60,FRAME_MS=1000/TARGET_FPS;
-const MOVE_EPS=.015,AIM_EPS=.04,TRIGGER_ON=.12;
-let canvas=null,ctx=null,raf=0,lastFrame=0,lastTick=0,running=false,paused=false;
+const W=1280,H=720,UPDATE_FPS=60,RENDER_FPS=30,UPDATE_FRAME=1000/UPDATE_FPS,RENDER_FRAME=1000/RENDER_FPS;
+let canvas=null,ctx=null,raf=0,lastUpdate=0,lastRender=0,lastTick=0,running=false,paused=false;
 let state=null,onExit=null;
 const keys=new Set(),pressed=new Set();
 let padPrev={};
@@ -50,8 +49,8 @@ function edge(now,cur,key){return !!cur[key]&&!padPrev[key]}
 function readInput(){
   const p=window.TVInput?.readGamepadState?.()||{};
   const left=(p.left?1:0),right=(p.right?1:0),up=(p.up?1:0),down=(p.down?1:0);
-  let x=Math.abs(Number(p.x)||0)>MOVE_EPS?Number(p.x):right-left;
-  let y=Math.abs(Number(p.y)||0)>MOVE_EPS?Number(p.y):down-up;
+  let x=Math.abs(Number(p.x)||0)>.16?Number(p.x):right-left;
+  let y=Math.abs(Number(p.y)||0)>.16?Number(p.y):down-up;
   if(keys.has('ArrowLeft'))x=-1;
   if(keys.has('ArrowRight'))x=1;
   if(keys.has('ArrowUp'))y=-1;
@@ -64,16 +63,16 @@ function readInput(){
     start:!!p.start||keys.has('p'),
     xButton:!!p.xButton||keys.has('x'),
     yButton:!!p.yButton||keys.has('y'),
-    r2:!!p.r2||(Number(p.rt)||0)>TRIGGER_ON,
+    r2:!!p.r2||(Number(p.rt)||0)>.45,
     x,y,
     rx:Number(p.rx)||0,
     ry:Number(p.ry)||0
   };
-  cur.bEdge=!!p.bEdgeNative||edge(performance.now(),cur,'b')||pressed.has('Escape');
-  cur.startEdge=!!p.startEdgeNative||edge(performance.now(),cur,'start')||pressed.has('p');
-  cur.xEdge=!!p.xEdgeNative||edge(performance.now(),cur,'xButton')||pressed.has('x');
-  cur.yEdge=!!p.yEdgeNative||edge(performance.now(),cur,'yButton')||pressed.has('y');
-  cur.aEdge=!!p.aEdgeNative||edge(performance.now(),cur,'a')||pressed.has('Enter')||pressed.has(' ');
+  cur.bEdge=edge(performance.now(),cur,'b')||pressed.has('Escape');
+  cur.startEdge=edge(performance.now(),cur,'start')||pressed.has('p');
+  cur.xEdge=edge(performance.now(),cur,'xButton')||pressed.has('x');
+  cur.yEdge=edge(performance.now(),cur,'yButton')||pressed.has('y');
+  cur.aEdge=edge(performance.now(),cur,'a')||pressed.has('Enter')||pressed.has(' ');
   padPrev={...cur};
   pressed.clear();
   return cur;
@@ -163,10 +162,10 @@ function update(dt,input){
   p.y=clamp(p.y+input.y*p.speed*dt,24,H-24);
 
   const aimMag=Math.hypot(input.rx,input.ry);
-  if(aimMag>AIM_EPS){p.aimX=input.rx/aimMag;p.aimY=input.ry/aimMag}
-  else if(Math.hypot(input.x,input.y)>MOVE_EPS){p.aimX=input.x;p.aimY=input.y}
+  if(aimMag>.24){p.aimX=input.rx/aimMag;p.aimY=input.ry/aimMag}
+  else if(Math.hypot(input.x,input.y)>.18){p.aimX=input.x;p.aimY=input.y}
 
-  if(input.a||input.aEdge||input.r2)shoot(p);
+  if(input.a||input.r2)shoot(p);
   if(input.xEdge)dash(p,input);
   if(input.yEdge)bomb(p);
 
@@ -333,24 +332,23 @@ function frame(t){
   if(!running)return;
   raf=requestAnimationFrame(frame);
 
-  // rAF is vsync-aligned on Android TV. The 15 ms guard caps high-refresh panels
-  // near 60 FPS while allowing normal 60 Hz displays to update+render every frame.
-  if(t-lastFrame<15)return;
-
-  const dt=Math.min(.033,(t-(lastTick||t))/1000||1/TARGET_FPS);
-  lastFrame=t;lastTick=t;
-
-  const input=readInput();
-  if(input.bEdge){stop();onExit?.();return}
-
-  if(state?.over){
-    if(input.aEdge)reset();
-  }else{
-    if(input.startEdge)paused=!paused;
-    if(!paused)update(dt,input);
+  if(t-lastUpdate>=UPDATE_FRAME){
+    const dt=Math.min(.04,(t-(lastTick||t))/1000||1/UPDATE_FPS);
+    lastUpdate=t;lastTick=t;
+    const input=readInput();
+    if(input.bEdge){stop();onExit?.();return}
+    if(state?.over){
+      if(input.aEdge)reset();
+    }else{
+      if(input.startEdge)paused=!paused;
+      if(!paused)update(dt,input);
+    }
   }
 
-  draw();
+  if(t-lastRender>=RENDER_FRAME){
+    lastRender=t;
+    draw();
+  }
 }
 
 function keyDown(e){
@@ -383,7 +381,7 @@ function start(opts={}){
   document.body.classList.add('game-running');
   document.getElementById('appPanel')?.classList.add('game-running','custom-game-running');
   window.tvGameActive=true;window.TVInput?.setGameMode?.(true);
-  reset();running=true;lastFrame=0;lastTick=0;
+  reset();running=true;lastUpdate=0;lastRender=0;lastTick=0;
   document.addEventListener('keydown',keyDown,true);document.addEventListener('keyup',keyUp,true);
   window.requestTVFullscreen?.();
   raf=requestAnimationFrame(frame);
