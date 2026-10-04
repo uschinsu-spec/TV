@@ -26,7 +26,7 @@ public class MainActivity extends Activity {
 
     private static final String HOME_URL = "https://uschinsu-spec.github.io/TV/";
     private static final float STICK_DEADZONE = 0.16f;
-    private static final float GAME_STICK_DEADZONE = 0.10f;
+    private static final float GAME_STICK_DEADZONE = 0.07f;
     private static final float AXIS_CHANGE_EPSILON = 0.025f;
     private static final long AXIS_DISPATCH_INTERVAL_MS = 20L;
 
@@ -142,7 +142,7 @@ public class MainActivity extends Activity {
                 view.evaluateJavascript(
                         "(function(){try{" +
                         "window.__TV_NATIVE_GAMEPAD__=true;" +
-                        "window.__TV_NATIVE_APP_VERSION__='2.1';window.__TV_NATIVE_LOW_LATENCY__=true;" +
+                        "window.__TV_NATIVE_APP_VERSION__='2.2';window.__TV_NATIVE_LOW_LATENCY__=true;window.__TV_NATIVE_ULTRA_60HZ__=true;" +
                         "document.documentElement.setAttribute('tabindex','-1');" +
                         "document.documentElement.focus();" +
 
@@ -456,9 +456,16 @@ public class MainActivity extends Activity {
         InputDevice.MotionRange range = device.getMotionRange(axis);
         if (range == null) return 0f;
         float value = event.getAxisValue(axis);
-        float requestedDeadzone = (gamepadStateBridge != null && gamepadStateBridge.isLowLatencyModeNative()) ? GAME_STICK_DEADZONE : STICK_DEADZONE;
-        float flat = Math.max(requestedDeadzone, range.getFlat());
-        return Math.abs(value) <= flat ? 0f : clamp(value, -1f, 1f);
+        boolean gameFast = gamepadStateBridge != null && gamepadStateBridge.isLowLatencyModeNative();
+        float flat = gameFast ? GAME_STICK_DEADZONE : Math.max(STICK_DEADZONE, range.getFlat());
+        float abs = Math.abs(value);
+        if (abs <= flat) return 0f;
+        if (!gameFast) return clamp(value, -1f, 1f);
+
+        // Remap the remaining stick travel back to 0..1 so movement begins immediately
+        // after the small gameplay deadzone instead of feeling soft/sluggish.
+        float scaled = (abs - flat) / Math.max(0.0001f, 1f - flat);
+        return Math.copySign(clamp(scaled, 0f, 1f), value);
     }
 
     private float triggerAxis(MotionEvent event, int axis) {
