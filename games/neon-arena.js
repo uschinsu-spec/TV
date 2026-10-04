@@ -3,8 +3,8 @@
 
 window.CustomTVGames=window.CustomTVGames||{};
 
-const W=1280,H=720,FPS=30,FRAME=1000/FPS;
-let canvas=null,ctx=null,raf=0,lastFrame=0,lastTick=0,running=false,paused=false;
+const W=1280,H=720,UPDATE_FPS=60,RENDER_FPS=30,UPDATE_FRAME=1000/UPDATE_FPS,RENDER_FRAME=1000/RENDER_FPS;
+let canvas=null,ctx=null,raf=0,lastUpdate=0,lastRender=0,lastTick=0,running=false,paused=false;
 let state=null,onExit=null;
 const keys=new Set(),pressed=new Set();
 let padPrev={};
@@ -331,17 +331,24 @@ function updateHud(){
 function frame(t){
   if(!running)return;
   raf=requestAnimationFrame(frame);
-  if(t-lastFrame<FRAME)return;
-  const dt=Math.min(.05,(t-(lastTick||t))/1000||1/FPS);lastFrame=t;lastTick=t;
-  const input=readInput();
-  if(input.bEdge){stop();onExit?.();return}
-  if(state?.over){
-    if(input.aEdge)reset();
-    draw();return;
+
+  if(t-lastUpdate>=UPDATE_FRAME){
+    const dt=Math.min(.04,(t-(lastTick||t))/1000||1/UPDATE_FPS);
+    lastUpdate=t;lastTick=t;
+    const input=readInput();
+    if(input.bEdge){stop();onExit?.();return}
+    if(state?.over){
+      if(input.aEdge)reset();
+    }else{
+      if(input.startEdge)paused=!paused;
+      if(!paused)update(dt,input);
+    }
   }
-  if(input.startEdge)paused=!paused;
-  if(!paused)update(dt,input);
-  draw();
+
+  if(t-lastRender>=RENDER_FRAME){
+    lastRender=t;
+    draw();
+  }
 }
 
 function keyDown(e){
@@ -374,7 +381,7 @@ function start(opts={}){
   document.body.classList.add('game-running');
   document.getElementById('appPanel')?.classList.add('game-running','custom-game-running');
   window.tvGameActive=true;window.TVInput?.setGameMode?.(true);
-  reset();running=true;lastFrame=0;lastTick=0;
+  reset();running=true;lastUpdate=0;lastRender=0;lastTick=0;
   document.addEventListener('keydown',keyDown,true);document.addEventListener('keyup',keyUp,true);
   window.requestTVFullscreen?.();
   raf=requestAnimationFrame(frame);
@@ -386,6 +393,7 @@ function stop(){
   document.body.classList.remove('game-running');
   document.getElementById('appPanel')?.classList.remove('game-running','custom-game-running');
   window.tvGameActive=false;
+  window.TVInput?.setGameMode?.(false);
   canvas=null;ctx=null;state=null;paused=false;
 }
 
