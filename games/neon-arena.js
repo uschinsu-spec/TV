@@ -3,11 +3,12 @@
 
 window.CustomTVGames=window.CustomTVGames||{};
 
-const W=1280,H=720,MAX_FRAME_DT=.05,INPUT_DEADZONE_NATIVE=.045,INPUT_DEADZONE_BROWSER=.10,AIM_DEADZONE=.12;
+const W=1280,H=720,MAX_FRAME_DT=.05,INPUT_DEADZONE_NATIVE=.018,INPUT_DEADZONE_BROWSER=.10,AIM_DEADZONE=.07;
 let canvas=null,ctx=null,raf=0,lastFrame=0,running=false,paused=false;
-let state=null,onExit=null;
+let state=null,onExit=null,frameAvg=1/60;
 const keys=new Set(),pressed=new Set();
-let padPrev={};
+const padPrev={a:false,b:false,start:false,xButton:false,yButton:false};
+const inputState={a:false,b:false,start:false,xButton:false,yButton:false,r2:false,x:0,y:0,rx:0,ry:0,bEdge:false,startEdge:false,xEdge:false,yEdge:false,aEdge:false};
 const ASSET_URLS={
   player:'./assets/game01/neon-arena/player.svg',
   drone:'./assets/game01/neon-arena/enemy-drone.svg',
@@ -62,9 +63,8 @@ function sprite(key,x,y,w,h,rot=0,alpha=1){
 function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
 function rand(min,max){return min+Math.random()*(max-min)}
 function len(x,y){return Math.hypot(x,y)}
-function norm(x,y){const l=Math.hypot(x,y)||1;return{x:x/l,y:y/l}}
 function circleHit(a,b,r){const dx=a.x-b.x,dy=a.y-b.y;return dx*dx+dy*dy<r*r}
-function edge(now,cur,key){return !!cur[key]&&!padPrev[key]}
+function edge(cur,key){return !!cur[key]&&!padPrev[key]}
 
 function readInput(){
   const p=window.TVInput?.readGamepadState?.()||{};
@@ -79,23 +79,21 @@ function readInput(){
   if(keys.has('ArrowDown'))y=1;
   const m=Math.hypot(x,y);if(m>1){x/=m;y/=m}
 
-  const cur={
-    a:!!p.a||keys.has('Enter')||keys.has(' '),
-    b:!!p.b||keys.has('Escape'),
-    start:!!p.start||keys.has('p'),
-    xButton:!!p.xButton||keys.has('x'),
-    yButton:!!p.yButton||keys.has('y'),
-    r2:!!p.r2||(Number(p.rt)||0)>.18,
-    x,y,
-    rx:Number(p.rx)||0,
-    ry:Number(p.ry)||0
-  };
-  cur.bEdge=edge(performance.now(),cur,'b')||pressed.has('Escape');
-  cur.startEdge=edge(performance.now(),cur,'start')||pressed.has('p');
-  cur.xEdge=edge(performance.now(),cur,'xButton')||pressed.has('x');
-  cur.yEdge=edge(performance.now(),cur,'yButton')||pressed.has('y');
-  cur.aEdge=edge(performance.now(),cur,'a')||pressed.has('Enter')||pressed.has(' ');
-  padPrev={...cur};
+  const cur=inputState;
+  cur.a=!!p.a||keys.has('Enter')||keys.has(' ');
+  cur.b=!!p.b||keys.has('Escape');
+  cur.start=!!p.start||keys.has('p');
+  cur.xButton=!!p.xButton||keys.has('x');
+  cur.yButton=!!p.yButton||keys.has('y');
+  cur.r2=!!p.r2||(Number(p.rt)||0)>.10;
+  cur.x=x;cur.y=y;cur.rx=Number(p.rx)||0;cur.ry=Number(p.ry)||0;
+  cur.bEdge=edge(cur,'b')||pressed.has('Escape');
+  cur.startEdge=edge(cur,'start')||pressed.has('p');
+  cur.xEdge=edge(cur,'xButton')||pressed.has('x');
+  cur.yEdge=edge(cur,'yButton')||pressed.has('y');
+  cur.aEdge=edge(cur,'a')||pressed.has('Enter')||pressed.has(' ');
+  padPrev.a=cur.a;padPrev.b=cur.b;padPrev.start=cur.start;
+  padPrev.xButton=cur.xButton;padPrev.yButton=cur.yButton;
   pressed.clear();
   return cur;
 }
@@ -107,7 +105,8 @@ function reset(){
     bullets:[],enemies:[],particles:[],pickups:[],
     stars:Array.from({length:70},()=>({x:Math.random()*W,y:Math.random()*H,s:rand(.5,1.8),a:rand(.16,.52)}))
   };
-  paused=false;padPrev={};
+  paused=false;
+  padPrev.a=padPrev.b=padPrev.start=padPrev.xButton=padPrev.yButton=false;
   updateHud();
 }
 
@@ -134,16 +133,16 @@ function shoot(p){
   const spread=.025;
   const a=Math.atan2(p.aimY,p.aimX)+rand(-spread,spread);
   const vx=Math.cos(a)*720,vy=Math.sin(a)*720;
-  state.bullets.push({x:p.x+p.aimX*24,y:p.y+p.aimY*24,vx,vy,r:5,life:1.2});
+  state.bullets.push({x:p.x+p.aimX*24,y:p.y+p.aimY*24,vx,vy,r:5,life:1.2,rot:a});
 }
 
 function dash(p,input){
   if(p.dashCd>0)return;
   let dx=input.x,dy=input.y;
   if(Math.hypot(dx,dy)<.15){dx=p.aimX;dy=p.aimY}
-  const n=norm(dx,dy);
-  p.x=clamp(p.x+n.x*115,25,W-25);
-  p.y=clamp(p.y+n.y*115,25,H-25);
+  const dl=Math.hypot(dx,dy)||1;
+  p.x=clamp(p.x+(dx/dl)*115,25,W-25);
+  p.y=clamp(p.y+(dy/dl)*115,25,H-25);
   p.dashCd=1.15;p.inv=.22;state.shake=7;
   burst(p.x,p.y,14,'#65f6ff');
 }
@@ -153,13 +152,15 @@ function bomb(p){
   p.bombs--;state.flash=.16;state.shake=12;
   for(const e of state.enemies){
     const d=Math.hypot(e.x-p.x,e.y-p.y);
-    if(d<300){e.hp-=4;const n=norm(e.x-p.x,e.y-p.y);e.x+=n.x*60;e.y+=n.y*60}
+    if(d<300){const dx=e.x-p.x,dy=e.y-p.y,l=Math.hypot(dx,dy)||1;e.hp-=4;e.x+=(dx/l)*60;e.y+=(dy/l)*60}
   }
   burst(p.x,p.y,40,'#ffe65a');
 }
 
 function burst(x,y,count,color){
-  for(let i=0;i<count&&state.particles.length<120;i++){
+  const particleCap=frameAvg>.021?72:120;
+  if(frameAvg>.025)count=Math.max(3,Math.ceil(count*.55));
+  for(let i=0;i<count&&state.particles.length<particleCap;i++){
     const a=Math.random()*Math.PI*2,s=rand(40,240);
     state.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(.18,.6),max:.6,color,size:rand(2,5)});
   }
@@ -200,7 +201,8 @@ function update(dt,input){
 
   for(const b of state.bullets){b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt}
   for(const e of state.enemies){
-    const n=norm(p.x-e.x,p.y-e.y);e.x+=n.x*e.speed*dt;e.y+=n.y*e.speed*dt;
+    const dx=p.x-e.x,dy=p.y-e.y,l=Math.hypot(dx,dy)||1;
+    e.x+=(dx/l)*e.speed*dt;e.y+=(dy/l)*e.speed*dt;
   }
 
   for(const b of state.bullets){
@@ -213,7 +215,7 @@ function update(dt,input){
 
   for(const e of state.enemies){
     if(e.hp<=0)continue;
-    if(circleHit(p,e,p.r+e.r)){damagePlayer(p,e.damage);const n=norm(e.x-p.x,e.y-p.y);e.x+=n.x*55;e.y+=n.y*55}
+    if(circleHit(p,e,p.r+e.r)){const dx=e.x-p.x,dy=e.y-p.y,l=Math.hypot(dx,dy)||1;damagePlayer(p,e.damage);e.x+=(dx/l)*55;e.y+=(dy/l)*55}
   }
 
   for(const e of state.enemies){
@@ -235,11 +237,17 @@ function update(dt,input){
 
   for(const pt of state.particles){pt.x+=pt.vx*dt;pt.y+=pt.vy*dt;pt.vx*=.95;pt.vy*=.95;pt.life-=dt}
 
-  state.bullets=state.bullets.filter(b=>b.life>0&&b.x>-30&&b.x<W+30&&b.y>-30&&b.y<H+30);
-  state.enemies=state.enemies.filter(e=>!e.dead);
-  state.pickups=state.pickups.filter(q=>q.life>0);
-  state.particles=state.particles.filter(pt=>pt.life>0);
+  compact(state.bullets,b=>b.life>0&&b.x>-30&&b.x<W+30&&b.y>-30&&b.y<H+30);
+  compact(state.enemies,e=>!e.dead);
+  compact(state.pickups,q=>q.life>0);
+  compact(state.particles,pt=>pt.life>0);
   updateHud();
+}
+
+function compact(arr,keep){
+  let w=0;
+  for(let r=0;r<arr.length;r++){const v=arr[r];if(keep(v))arr[w++]=v}
+  arr.length=w;
 }
 
 function roundedRect(x,y,w,h,r){
@@ -282,8 +290,7 @@ function draw(){
   }
 
   for(const b of state.bullets){
-    const a=Math.atan2(b.vy,b.vx);
-    if(!sprite('bullet',b.x,b.y,34,18,a)){
+    if(!sprite('bullet',b.x,b.y,34,18,b.rot)){
       ctx.fillStyle='#6df7ff';ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();
     }
   }
@@ -359,6 +366,7 @@ function frame(t){
 
   const dt=lastFrame?Math.min(MAX_FRAME_DT,Math.max(.001,(t-lastFrame)/1000)):1/60;
   lastFrame=t;
+  frameAvg=frameAvg*.94+dt*.06;
 
   // Read the controller on every display frame. No 30 FPS throttle and no
   // evaluateJavascript path while the Android app's native GAME mode is active.
@@ -419,7 +427,8 @@ function start(opts={}){
 }
 
 function stop(){
-  running=false;cancelAnimationFrame(raf);raf=0;keys.clear();pressed.clear();padPrev={};
+  running=false;cancelAnimationFrame(raf);raf=0;keys.clear();pressed.clear();
+  padPrev.a=padPrev.b=padPrev.start=padPrev.xButton=padPrev.yButton=false;
   document.removeEventListener('keydown',keyDown,true);document.removeEventListener('keyup',keyUp,true);
   document.body.classList.remove('game-running');
   document.getElementById('appPanel')?.classList.remove('game-running','custom-game-running');
