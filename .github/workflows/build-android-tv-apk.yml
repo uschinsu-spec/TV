@@ -46,7 +46,7 @@ jobs:
         run: gradle --no-daemon clean assembleDebug
 
       - name: Rename APK
-        run: cp android-tv/app/build/outputs/apk/debug/app-debug.apk TVUtility-AndroidTV-v2.2.apk
+        run: cp android-tv/app/build/outputs/apk/debug/app-debug.apk TVUtility-AndroidTV-v2.3.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
