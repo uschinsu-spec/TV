@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.view.Display;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -36,6 +37,7 @@ public class MainActivity extends Activity {
     private WebChromeClient.CustomViewCallback customViewCallback;
     private long lastAxisDispatchAt = 0L;
     private int lastAxisDeviceId = -1;
+    private int lastFastAxisDeviceId = -1;
     private boolean hasLastAxes = false;
     private boolean nativeTvFullscreen = false;
     private GamepadStateBridge gamepadStateBridge;
@@ -47,7 +49,11 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().addFlags(
+                WindowManager.LayoutParams.FLAG_FULLSCREEN |
+                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
+        );
+        prefer60HzDisplayMode();
         enterImmersiveMode();
 
         root = new FrameLayout(this);
@@ -57,6 +63,9 @@ public class MainActivity extends Activity {
         WebView.setWebContentsDebuggingEnabled(false);
         webView = new WebView(this);
         webView.setBackgroundColor(0xFF000000);
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        webView.setVerticalScrollBarEnabled(false);
+        webView.setHorizontalScrollBarEnabled(false);
         webView.setFocusable(true);
         webView.setFocusableInTouchMode(true);
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
@@ -239,6 +248,34 @@ public class MainActivity extends Activity {
 
     private boolean isHomeVisible() {
         return webView != null && isHomeOrigin(webView.getUrl());
+    }
+
+    private void prefer60HzDisplayMode() {
+        if (android.os.Build.VERSION.SDK_INT < 23) return;
+        try {
+            Display display = getWindowManager().getDefaultDisplay();
+            Display.Mode current = display.getMode();
+            Display.Mode best = current;
+            float bestDelta = Math.abs(current.getRefreshRate() - 60f);
+
+            for (Display.Mode mode : display.getSupportedModes()) {
+                if (mode.getPhysicalWidth() != current.getPhysicalWidth() ||
+                        mode.getPhysicalHeight() != current.getPhysicalHeight()) {
+                    continue;
+                }
+                float delta = Math.abs(mode.getRefreshRate() - 60f);
+                if (delta < bestDelta) {
+                    best = mode;
+                    bestDelta = delta;
+                }
+            }
+
+            WindowManager.LayoutParams params = getWindow().getAttributes();
+            params.preferredDisplayModeId = best.getModeId();
+            getWindow().setAttributes(params);
+        } catch (Exception ignored) {
+            // Keep the TV's current display mode when a vendor firmware rejects mode selection.
+        }
     }
 
     private void enterImmersiveMode() {
@@ -479,7 +516,15 @@ public class MainActivity extends Activity {
         float value;
         if (max > min) value = (raw - min) / (max - min);
         else value = raw;
-        return clamp(value, 0f, 1f);
+        value = clamp(value, 0f, 1f);
+
+        // In active GAME mode make analog triggers react earlier without affecting menus.
+        if (gamepadStateBridge != null &&
+                gamepadStateBridge.isLowLatencyModeNative() &&
+                value > 0f) {
+            return (float) Math.sqrt(value);
+        }
+        return value;
     }
 
     private float dominant(float a, float b) {
@@ -559,7 +604,11 @@ public class MainActivity extends Activity {
                     triggerAxis(event, MotionEvent.AXIS_RTRIGGER),
                     triggerAxis(event, MotionEvent.AXIS_GAS)
             );
-            gamepadStateBridge.setDevice(controllerDeviceName(event.getDevice()));
+            int deviceId = event.getDeviceId();
+            if (deviceId != lastFastAxisDeviceId) {
+                lastFastAxisDeviceId = deviceId;
+                gamepadStateBridge.setDevice(controllerDeviceName(event.getDevice()));
+            }
             gamepadStateBridge.setAxes(lx, ly, rx, ry, hatX, hatY, lt, rt);
             return;
         }
