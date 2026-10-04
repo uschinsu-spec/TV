@@ -27,7 +27,7 @@ public class MainActivity extends Activity {
 
     private static final String HOME_URL = "https://uschinsu-spec.github.io/TV/";
     private static final float STICK_DEADZONE = 0.16f;
-    private static final float GAME_STICK_DEADZONE = 0.07f;
+    private static final float GAME_STICK_DEADZONE = 0.035f;
     private static final float AXIS_CHANGE_EPSILON = 0.025f;
     private static final long AXIS_DISPATCH_INTERVAL_MS = 20L;
 
@@ -38,8 +38,10 @@ public class MainActivity extends Activity {
     private long lastAxisDispatchAt = 0L;
     private int lastAxisDeviceId = -1;
     private int lastFastAxisDeviceId = -1;
+    private int lastFastButtonDeviceId = -1;
     private boolean hasLastAxes = false;
     private boolean nativeTvFullscreen = false;
+    private boolean homeVisible = false;
     private GamepadStateBridge gamepadStateBridge;
     private float lastLx, lastLy, lastRx, lastRy, lastHatX, lastHatY, lastLt, lastRt;
 
@@ -51,7 +53,8 @@ public class MainActivity extends Activity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().addFlags(
                 WindowManager.LayoutParams.FLAG_FULLSCREEN |
-                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
+                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED |
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
         );
         prefer60HzDisplayMode();
         enterImmersiveMode();
@@ -70,6 +73,9 @@ public class MainActivity extends Activity {
         webView.setFocusableInTouchMode(true);
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
         webView.setVisibility(View.INVISIBLE);
+        if (android.os.Build.VERSION.SDK_INT >= 26) {
+            webView.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, false);
+        }
 
         root.addView(webView, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -139,6 +145,7 @@ public class MainActivity extends Activity {
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
                 nativeTvFullscreen = false;
+                homeVisible = isHomeOrigin(url);
                 if (gamepadStateBridge != null) gamepadStateBridge.setLowLatencyMode(false);
                 enterImmersiveMode();
             }
@@ -146,12 +153,13 @@ public class MainActivity extends Activity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+                homeVisible = isHomeOrigin(url);
                 view.setVisibility(View.VISIBLE);
                 view.requestFocus(View.FOCUS_DOWN);
                 view.evaluateJavascript(
                         "(function(){try{" +
                         "window.__TV_NATIVE_GAMEPAD__=true;" +
-                        "window.__TV_NATIVE_APP_VERSION__='2.2';window.__TV_NATIVE_LOW_LATENCY__=true;window.__TV_NATIVE_ULTRA_60HZ__=true;" +
+                        "window.__TV_NATIVE_APP_VERSION__='2.3';window.__TV_NATIVE_LOW_LATENCY__=true;window.__TV_NATIVE_ULTRA_60HZ__=true;window.__TV_NATIVE_LOCK_FREE_INPUT__=true;" +
                         "document.documentElement.setAttribute('tabindex','-1');" +
                         "document.documentElement.focus();" +
 
@@ -247,7 +255,7 @@ public class MainActivity extends Activity {
     }
 
     private boolean isHomeVisible() {
-        return webView != null && isHomeOrigin(webView.getUrl());
+        return webView != null && homeVisible;
     }
 
     private void prefer60HzDisplayMode() {
@@ -272,6 +280,7 @@ public class MainActivity extends Activity {
 
             WindowManager.LayoutParams params = getWindow().getAttributes();
             params.preferredDisplayModeId = best.getModeId();
+            params.preferredRefreshRate = 60f;
             getWindow().setAttributes(params);
         } catch (Exception ignored) {
             // Keep the TV's current display mode when a vendor firmware rejects mode selection.
@@ -688,16 +697,21 @@ public class MainActivity extends Activity {
             return true;
         }
 
-        // GAME-only low-latency path: update native state directly, no evaluateJavascript queue.
+        // GAME-only ultra-low-latency path: write native bit state directly.
+        // No String mapping and no evaluateJavascript queue on gameplay input.
         if (isHomeVisible() &&
                 gamepadStateBridge != null &&
                 gamepadStateBridge.isLowLatencyModeNative() &&
                 (isGameControllerSource(event.getSource()) || isHomeNavigationKey(keyCode))) {
-            String name = (event.getKeyCode() == KeyEvent.KEYCODE_BACK)
-                    ? "B"
-                    : controllerButtonName(event.getKeyCode());
-            gamepadStateBridge.setDevice(controllerDeviceName(event.getDevice()));
-            gamepadStateBridge.setButton(name, event.getAction() == KeyEvent.ACTION_DOWN);
+            int deviceId = event.getDeviceId();
+            if (deviceId != lastFastButtonDeviceId) {
+                lastFastButtonDeviceId = deviceId;
+                gamepadStateBridge.setDevice(controllerDeviceName(event.getDevice()));
+            }
+            gamepadStateBridge.setButtonCode(
+                    keyCode,
+                    event.getAction() == KeyEvent.ACTION_DOWN
+            );
             return true;
         }
 
@@ -730,6 +744,14 @@ public class MainActivity extends Activity {
     @Override
     public boolean dispatchGenericMotionEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_MOVE && isGameControllerSource(event.getSource())) {
+            if (gamepadStateBridge != null && gamepadStateBridge.isLowLatencyModeNative() && webView != null) {
+                // Ask Android not to batch subsequent motion samples while a game is active.
+                // This reduces joystick latency on devices/firmware that buffer MotionEvents.
+                try {
+                    webView.requestUnbufferedDispatch(event);
+                } catch (Exception ignored) {
+                }
+            }
             emitGamepadAxes(event);
             if (isHomeVisible()) {
                 return true;
