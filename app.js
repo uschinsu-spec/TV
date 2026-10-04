@@ -1,4 +1,4 @@
-const VERSION='7.3.0';
+const VERSION='8.0.0';
 const $=id=>document.getElementById(id);
 const els={
   clock:$('clock'),today:$('today'),greeting:$('greeting'),
@@ -171,24 +171,8 @@ window.closeApp=closeApp;
 window.requestTVFullscreen=requestTVFullscreen;
 window.isTVMode=()=>tvMode;
 
-function restoreHtml5GameCenter(){
-  let shouldReturn=false;
-  try{
-    shouldReturn=localStorage.getItem('tvReturnToGameCenter')==='1';
-    if(shouldReturn)localStorage.removeItem('tvReturnToGameCenter');
-  }catch{}
-  if(!shouldReturn)return;
-  const gameCard=document.querySelector('[data-app="game"]');
-  if(els.panel.classList.contains('open')&&els.panel.dataset.app==='game'){
-    setTimeout(()=>els.panelBody.querySelector('[data-html5-game]')?.focus(),60);
-    return;
-  }
-  setTimeout(()=>openApp('game',gameCard),40);
-}
-window.addEventListener('pageshow',restoreHtml5GameCenter);
-
 syncModeUI();
 updateClock();
 updateNetwork();
 setInterval(updateClock,1000);
-setTimeout(()=>{restoreHtml5GameCenter();if(!els.panel.classList.contains('open'))document.querySelector('.app-card')?.focus()},220);
+setTimeout(()=>document.querySelector('.app-card')?.focus(),220);
