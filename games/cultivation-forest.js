@@ -11,9 +11,11 @@ const ASSETS={
   bandit:'./assets/game02/cultivation-forest/enemy-bandit.svg',
   tree:'./assets/game02/cultivation-forest/enemy-tree.svg',
   boar:'./assets/game02/cultivation-forest/enemy-boar.svg',
+  guardian:'./assets/game02/cultivation-forest/boss-guardian.svg',
   spirit:'./assets/game02/cultivation-forest/pickup-spirit.svg',
   qi:'./assets/game02/cultivation-forest/pickup-qi.svg',
-  gourd:'./assets/game02/cultivation-forest/pickup-gourd.svg'
+  gourd:'./assets/game02/cultivation-forest/pickup-gourd.svg',
+  talisman:'./assets/game02/cultivation-forest/pickup-talisman.svg'
 };
 const imgs=Object.create(null),raster=Object.create(null);
 let assetsStarted=false,canvas=null,ctx=null,raf=0,lastFrame=0,running=false,onExit=null;
@@ -138,6 +140,7 @@ function enemyTemplate(type,elite=false,boss=false){
   if(type==='wolf')return{type,r:19,hp:32+lv*5,speed:112+Math.min(70,w*3),damage:13+lv*.8,xp:8,value:9,elite,boss:false};
   if(type==='bandit')return{type,r:23,hp:58+lv*8,speed:82+Math.min(45,w*2),damage:18+lv, xp:12,value:14,elite,boss:false};
   if(type==='tree')return{type,r:31,hp:145+lv*16,speed:48+Math.min(25,w),damage:27+lv*1.1,xp:22,value:26,elite,boss:false};
+  if(type==='guardian')return{type,r:58,hp:(420+lv*34)*4.8,speed:45,damage:(38+lv*1.5)*1.5,xp:220,value:340,elite:true,boss:true};
   const mult=boss?4.6:elite?2.1:1;
   return{type:'boar',r:boss?54:38,hp:(230+lv*26)*mult,speed:boss?50:63,damage:(34+lv*1.4)*(boss?1.45:1),xp:boss?180:50,value:boss?260:65,elite:elite||boss,boss};
 }
@@ -154,7 +157,8 @@ function spawnEnemy(type=null,elite=false,boss=false){
   if(boss)showMessage('YÊU VƯƠNG XUẤT HIỆN',2.2);
 }
 function spawnBoss(){
-  state.bossTier++;spawnEnemy('boar',true,true);
+  state.bossTier++;
+  spawnEnemy(state.bossTier%2===1?'guardian':'boar',true,true);
 }
 
 function nearestTargets(maxCount,range,dirX=0,dirY=0){
@@ -344,7 +348,7 @@ function draw(){
   const sh=state.shake,ox=sh?rand(-sh,sh):0,oy=sh?rand(-sh,sh):0;
   ctx.save();ctx.translate(ox,oy);drawBackground();
   for(const d of state.drops){
-    const y=d.y+Math.sin(d.bob)*5,k=d.type==='qi'?'qi':d.type==='spirit'?'spirit':d.type==='gourd'?'gourd':null;
+    const y=d.y+Math.sin(d.bob)*5,k=d.type==='qi'?'qi':d.type==='spirit'?'spirit':d.type==='gourd'?'gourd':d.type==='gear'?'talisman':null;
     if(k&&drawSprite(k,d.x,y,34,34,0,.98)){}
     else{
       const sx=d.x-state.cam.x,sy=y-state.cam.y;ctx.save();ctx.translate(sx,sy);
@@ -354,7 +358,7 @@ function draw(){
   }
   for(const e of state.enemies){
     const dx=state.player.x-e.x,dy=state.player.y-e.y,rot=Math.atan2(dy,dx);
-    const size=e.boss?138:e.type==='boar'?92:e.type==='tree'?82:e.type==='bandit'?68:62;
+    const size=e.type==='guardian'?152:e.boss?138:e.type==='boar'?92:e.type==='tree'?82:e.type==='bandit'?68:62;
     drawSprite(e.type,e.x,e.y,size,size,rot, e.hit>0?.65:1);
     if(e.elite){
       const x=e.x-state.cam.x,y=e.y-state.cam.y-size*.54,w=e.boss?100:66;
@@ -414,7 +418,8 @@ function drawBossBar(){
   ctx.fillStyle='rgba(25,7,7,.86)';roundRect(x,y,w,34,14);ctx.fill();
   ctx.fillStyle='#4a1719';ctx.fillRect(x+8,y+18,w-16,9);
   ctx.fillStyle='#e6534f';ctx.fillRect(x+8,y+18,(w-16)*pct,9);
-  ctx.textAlign='center';ctx.fillStyle='#ffe3a1';ctx.font='900 13px Arial';ctx.fillText('YÊU VƯƠNG · '+Math.ceil(boss.hp)+' / '+Math.ceil(boss.maxHp),W/2,y+14);ctx.textAlign='left';
+  const name=boss.type==='guardian'?'THANH MỘC LINH TÔN':'HUYẾT NHA TRƯ YÊU';
+  ctx.textAlign='center';ctx.fillStyle='#ffe3a1';ctx.font='900 13px Arial';ctx.fillText(name+' · '+Math.ceil(boss.hp)+' / '+Math.ceil(boss.maxHp),W/2,y+14);ctx.textAlign='left';
 }
 function drawMinimap(){
   const x=W-170,y=130,r=74,p=state.player;ctx.save();ctx.translate(x,y);
