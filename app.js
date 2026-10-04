@@ -1,4 +1,4 @@
-const VERSION='7.2.0';
+const VERSION='7.3.0';
 const $=id=>document.getElementById(id);
 const els={
   clock:$('clock'),today:$('today'),greeting:$('greeting'),
