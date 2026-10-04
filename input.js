@@ -20,6 +20,7 @@ let lastRightScroll=0;
 let browserPad='';
 let prevLT=false,prevRT=false;
 let gameMode=false;
+const directPressSeen={a:0,b:0,x:0,y:0,start:0};
 
 function now(){return performance.now()}
 function nativeRecent(){return now()-(nativeState.updatedAt||0)<420}
@@ -162,8 +163,38 @@ function browserSnapshot(gp){
   };
 }
 function directNativeSnapshot(){
-  if(!gameMode||!window.TVNativeInput?.readState)return null;
+  if(!gameMode||!window.TVNativeInput)return null;
   try{
+    if(window.TVNativeInput.readPacked){
+      const raw=window.TVNativeInput.readPacked();
+      if(!raw)return null;
+      const v=raw.split('|');
+      if(v.length<14)return null;
+      const lx=Number(v[0])||0,ly=Number(v[1])||0,rx=Number(v[2])||0,ry=Number(v[3])||0;
+      const hatX=Number(v[4])||0,hatY=Number(v[5])||0,lt=Number(v[6])||0,rt=Number(v[7])||0;
+      const mask=Number(v[8])|0;
+      const aSeq=Number(v[9])||0,bSeq=Number(v[10])||0,xSeq=Number(v[11])||0,ySeq=Number(v[12])||0,startSeq=Number(v[13])||0;
+      const aEdgeNative=aSeq!==directPressSeen.a;
+      const bEdgeNative=bSeq!==directPressSeen.b;
+      const xEdgeNative=xSeq!==directPressSeen.x;
+      const yEdgeNative=ySeq!==directPressSeen.y;
+      const startEdgeNative=startSeq!==directPressSeen.start;
+      directPressSeen.a=aSeq;directPressSeen.b=bSeq;directPressSeen.x=xSeq;directPressSeen.y=ySeq;directPressSeen.start=startSeq;
+      return {
+        x:Math.abs(hatX)>=Math.abs(lx)?hatX:lx,
+        y:Math.abs(hatY)>=Math.abs(ly)?hatY:ly,
+        rx,ry,lt,rt,
+        a:!!(mask&1)||!!(mask&65536),b:!!(mask&2),xButton:!!(mask&4),yButton:!!(mask&8),
+        l1:!!(mask&16),r1:!!(mask&32),l2:!!(mask&64),r2:!!(mask&128),
+        select:!!(mask&256),start:!!(mask&512),
+        up:!!(mask&4096),down:!!(mask&8192),left:!!(mask&16384),right:!!(mask&32768),
+        aEdgeNative,bEdgeNative,xEdgeNative,yEdgeNative,startEdgeNative,
+        device:window.__lastTVGamepadDevice||'Native Gamepad',
+        source:'native-packed'
+      };
+    }
+
+    if(!window.TVNativeInput.readState)return null;
     const raw=window.TVNativeInput.readState();
     if(!raw)return null;
     const d=JSON.parse(raw);
@@ -174,7 +205,7 @@ function directNativeSnapshot(){
       a:!!d.a||!!d.dpadCenter,b:!!d.b,start:!!d.start,select:!!d.select,
       up:!!d.up,down:!!d.down,left:!!d.left,right:!!d.right,
       xButton:!!d.xButton,yButton:!!d.yButton,l1:!!d.l1,r1:!!d.r1,l2:!!d.l2,r2:!!d.r2,
-      device:d.device||window.__lastTVGamepadDevice||'Native Gamepad',
+      device:window.__lastTVGamepadDevice||'Native Gamepad',
       source:'native-direct'
     };
   }catch(e){return null}
@@ -227,7 +258,7 @@ function pollBrowserGamepad(){
     }
   }
   // Menus do not need 60 FPS input scanning. 100 ms is responsive enough for TV navigation.
-  setTimeout(pollBrowserGamepad,gameMode&&nativeAvailable()?500:(gameActive()?250:(gp?100:350)));
+  setTimeout(pollBrowserGamepad,gameMode&&nativeAvailable()?2000:(gameActive()?250:(gp?100:350)));
 }
 setTimeout(pollBrowserGamepad,150);
 
@@ -237,9 +268,10 @@ window.TVInput={
   get gameMode(){return gameMode},
   setGameMode(on){
     gameMode=!!on;
+    directPressSeen.a=directPressSeen.b=directPressSeen.x=directPressSeen.y=directPressSeen.start=0;
     try{window.TVNativeInput?.setLowLatencyMode?.(gameMode)}catch(e){}
     if(gameMode&&nativeAvailable()){
-      setStatus(nativeState.device||window.__lastTVGamepadDevice||'Native Gamepad','GAME MODE LOW LATENCY');
+      setStatus(nativeState.device||window.__lastTVGamepadDevice||'Native Gamepad','GAME MODE 60HZ ULTRA');
     }
   },
   readGamepadState:normalizedState
