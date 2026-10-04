@@ -1422,3 +1422,39 @@ body.game-running{overflow:hidden}
   .custom-game-copy em{font-size:11px;line-height:1.32;margin-top:9px}
   .custom-game-copy>b{margin-top:10px;font-size:11px}
 }
+
+
+/* GAME 04 · Om Nom Run */
+.game04-card .custom-game-art{
+  background:
+    radial-gradient(circle at 50% 44%,rgba(208,255,83,.42),transparent 28%),
+    radial-gradient(circle at 30% 75%,rgba(56,210,255,.22),transparent 36%),
+    linear-gradient(145deg,#173f43,#24624c 55%,#13263d);
+}
+.game04-card .custom-game-number{color:#eaff75}
+.game04-card .custom-game-copy>span{color:#a8f06f}
+.omnom-mark{
+  position:relative;
+  z-index:2;
+  display:block;
+  font-size:clamp(44px,5.2vw,84px);
+  line-height:.72;
+  font-weight:1000;
+  letter-spacing:-.075em;
+  color:#f5ffe4;
+  text-shadow:0 6px 20px rgba(0,0,0,.4);
+  transform:rotate(-4deg);
+  text-align:center;
+}
+.omnom-mark b{
+  display:inline-block;
+  margin-top:.18em;
+  padding:.08em .16em;
+  border-radius:.16em;
+  font-size:.52em;
+  line-height:1;
+  letter-spacing:.08em;
+  color:#17351d;
+  background:#dafa55;
+  box-shadow:0 8px 22px rgba(0,0,0,.26);
+}
