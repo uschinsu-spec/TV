@@ -10,14 +10,28 @@ const keys=new Set(),pressed=new Set();
 const padPrev={a:false,b:false,start:false,xButton:false,yButton:false};
 const inputState={a:false,b:false,start:false,xButton:false,yButton:false,r2:false,x:0,y:0,rx:0,ry:0,bEdge:false,startEdge:false,xEdge:false,yEdge:false,aEdge:false};
 const ASSET_URLS={
-  player:'./assets/game01/neon-arena/player.svg',
-  drone:'./assets/game01/neon-arena/enemy-drone.svg',
-  runner:'./assets/game01/neon-arena/enemy-runner.svg',
-  tank:'./assets/game01/neon-arena/enemy-tank.svg',
-  bullet:'./assets/game01/neon-arena/bullet.svg',
-  heal:'./assets/game01/neon-arena/pickup-heal.svg',
-  bomb:'./assets/game01/neon-arena/pickup-bomb.svg',
-  arena:'./assets/game01/neon-arena/arena-bg.svg'
+  player:'./games/game01-neon-arena/assets/player.png',
+  drone:'./games/game01-neon-arena/assets/enemy-drone.png',
+  runner:'./games/game01-neon-arena/assets/enemy-runner.png',
+  tank:'./games/game01-neon-arena/assets/enemy-tank.png',
+  boss:'./games/game01-neon-arena/assets/enemy-boss.png',
+  bullet:'./games/game01-neon-arena/assets/bullet.png',
+  heal:'./games/game01-neon-arena/assets/pickup-heal.png',
+  bomb:'./games/game01-neon-arena/assets/pickup-bomb.png',
+  shield:'./games/game01-neon-arena/assets/pickup-shield.png',
+  rapid:'./games/game01-neon-arena/assets/pickup-rapid.png',
+  arena:'./games/game01-neon-arena/assets/arena-bg.png'
+};
+const ASSET_FALLBACKS={
+  player:'./games/game01-neon-arena/legacy-svg/player.svg',
+  drone:'./games/game01-neon-arena/legacy-svg/enemy-drone.svg',
+  runner:'./games/game01-neon-arena/legacy-svg/enemy-runner.svg',
+  tank:'./games/game01-neon-arena/legacy-svg/enemy-tank.svg',
+  boss:'./games/game01-neon-arena/legacy-svg/enemy-tank.svg',
+  bullet:'./games/game01-neon-arena/legacy-svg/bullet.svg',
+  heal:'./games/game01-neon-arena/legacy-svg/pickup-heal.svg',
+  bomb:'./games/game01-neon-arena/legacy-svg/pickup-bomb.svg',
+  arena:'./games/game01-neon-arena/legacy-svg/arena-bg.svg'
 };
 const assets=Object.create(null);
 const raster=Object.create(null);
@@ -44,6 +58,10 @@ function preloadAssets(){
     const img=new Image();
     img.decoding='async';
     img.onload=()=>rasterizeAsset(key,img);
+    img.onerror=()=>{
+      const fallback=ASSET_FALLBACKS[key];
+      if(fallback&&img.src.indexOf('/legacy-svg/')<0){img.onerror=null;img.src=fallback}
+    };
     img.src=url;
     assets[key]=img;
   }
@@ -359,7 +377,7 @@ function draw(){
   for(const q of state.pickups){
     const pulse=1+Math.sin(state.t*5+q.x)*.07;
     let drawn=false;
-    if(q.type==='heal'||q.type==='bomb')drawn=sprite(q.type,q.x,q.y,38*pulse,38*pulse,state.t*1.4);
+    if(ASSET_URLS[q.type])drawn=sprite(q.type,q.x,q.y,38*pulse,38*pulse,state.t*1.4);
     if(!drawn){
       ctx.save();ctx.translate(q.x,q.y);ctx.rotate(state.t*1.7);
       ctx.fillStyle=q.type==='heal'?'#56efa2':q.type==='bomb'?'#ffe158':q.type==='shield'?'#72ddff':'#ff72f0';
@@ -381,7 +399,7 @@ function draw(){
     const ang=Math.atan2(state.player.y-e.y,state.player.x-e.x);
     const size=e.type==='boss'?108:e.type==='tank'?76:e.type==='runner'?48:58;
     const rot=(e.type==='tank'||e.type==='boss')?state.t*.35:ang;
-    const assetKey=e.type==='boss'?'tank':e.type;
+    const assetKey=e.type;
     if(!sprite(assetKey,e.x,e.y,size,size,rot)){
       ctx.save();ctx.translate(e.x,e.y);
       if(e.type==='runner'){

@@ -18,7 +18,7 @@ function renderMenu(){
       '</div>'+
       '<div class="custom-game-list">'+
         '<button id="launchNeonArena" class="custom-game-card focusable">'+
-          '<span class="custom-game-art"><img class="custom-game-poster" src="./assets/game01/neon-arena/poster.svg" alt=""><span class="custom-game-number">GAME 01</span><span class="custom-game-tag">ARENA ACTION</span></span>'+
+          '<span class="custom-game-art"><img class="custom-game-poster" src="./games/game01-neon-arena/assets/poster.png" onerror="this.onerror=null;this.src=&quot;./games/game01-neon-arena/legacy-svg/poster.svg&quot;" alt=""><span class="custom-game-number">GAME 01</span><span class="custom-game-tag">ARENA ACTION</span></span>'+
           '<span class="custom-game-copy"><strong>NEON ARENA</strong><span>Survival · Auto-fire · Progression</span>'+
           '<em>Tự khóa mục tiêu và tự bắn. Lên cấp tăng hỏa lực, giữ combo, săn boss mỗi 5 wave; cần phải dùng để ưu tiên hướng ngắm, X dash, Y thả bom.</em>'+
           '<b>A / OK · CHƠI</b></span>'+
