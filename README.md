@@ -59,3 +59,15 @@ APK artifact: `TVUtility-AndroidTV-v1.7.apk`
 - Deadzone F710 trong gameplay giảm từ 0.16 xuống 0.10; ngoài gameplay vẫn giữ 0.16.
 - Khi thoát game bằng B/Back, low-latency mode tắt ngay.
 - APK version: `2.1.0` / versionCode `12`.
+
+
+## APK 2.2 — Ultra Game Mode
+- Tối ưu **ở tầng APK**, không chỉnh riêng GAME 01.
+- WebView dùng hardware acceleration và APK ưu tiên display mode gần **60 Hz** ở đúng độ phân giải TV.
+- Low-latency native gamepad state tiếp tục chỉ bật khi game gọi Game Mode; Home/TV/YouTube/menu giữ chế độ nhẹ.
+- Deadzone native trong Game Mode giảm xuống **0.07** và remap lại toàn hành trình cần để phản hồi sớm hơn.
+- Trigger analog trong Game Mode dùng response curve nhạy hơn.
+- Native bridge giữ một pulse cho cú bấm cực nhanh để game không hụt A/B/X/Y/Start/D-pad giữa hai lần đọc.
+- Không còn tạo tên thiết bị lại trên mỗi sample analog trong Game Mode.
+- Có thêm `readPacked()` cho các game tương lai muốn đọc state native với overhead thấp hơn.
+- APK version: `2.2.0` / versionCode `13`.
