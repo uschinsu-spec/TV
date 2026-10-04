@@ -52,7 +52,7 @@ function noteNative(d){
   }
   if(d?.kind==='button'&&d.name)nativeState.buttons[d.name]=d.action==='down';
   const action=d?.kind==='button'?(d.name+' '+String(d.action||'').toUpperCase()):'ANALOG';
-  setStatus(nativeState.device,action);
+  if(!gameActive()&&!gameMode)setStatus(nativeState.device,action);
 }
 
 function activate(){
@@ -161,7 +161,28 @@ function browserSnapshot(gp){
     device:gp.id||'Gamepad',source:'browser'
   };
 }
+function directNativeSnapshot(){
+  if(!gameMode||!window.TVNativeInput?.readState)return null;
+  try{
+    const raw=window.TVNativeInput.readState();
+    if(!raw)return null;
+    const d=JSON.parse(raw);
+    return {
+      x:Math.abs(Number(d.hatX)||0)>=Math.abs(Number(d.lx)||0)?Number(d.hatX)||0:Number(d.lx)||0,
+      y:Math.abs(Number(d.hatY)||0)>=Math.abs(Number(d.ly)||0)?Number(d.hatY)||0:Number(d.ly)||0,
+      rx:Number(d.rx)||0,ry:Number(d.ry)||0,lt:Number(d.lt)||0,rt:Number(d.rt)||0,
+      a:!!d.a||!!d.dpadCenter,b:!!d.b,start:!!d.start,select:!!d.select,
+      up:!!d.up,down:!!d.down,left:!!d.left,right:!!d.right,
+      xButton:!!d.xButton,yButton:!!d.yButton,l1:!!d.l1,r1:!!d.r1,l2:!!d.l2,r2:!!d.r2,
+      device:d.device||window.__lastTVGamepadDevice||'Native Gamepad',
+      source:'native-direct'
+    };
+  }catch(e){return null}
+}
+
 function normalizedState(){
+  const direct=directNativeSnapshot();
+  if(direct)return direct;
   let s;
   // Inside Android APK game mode, keep using cached native state even while sticks are centered.
   // This prevents navigator.getGamepads() from being called every animation frame.
@@ -216,8 +237,9 @@ window.TVInput={
   get gameMode(){return gameMode},
   setGameMode(on){
     gameMode=!!on;
+    try{window.TVNativeInput?.setLowLatencyMode?.(gameMode)}catch(e){}
     if(gameMode&&nativeAvailable()){
-      setStatus(nativeState.device||window.__lastTVGamepadDevice||'Native Gamepad','GAME MODE');
+      setStatus(nativeState.device||window.__lastTVGamepadDevice||'Native Gamepad','GAME MODE LOW LATENCY');
     }
   },
   readGamepadState:normalizedState

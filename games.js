@@ -5,7 +5,7 @@ let activeGame='';
 
 function renderMenu(){
   window.tvGameActive=false;
-  window.TVInput?.setGameMode?.(true);
+  window.TVInput?.setGameMode?.(false);
   activeGame='';
   const root=$('panelBody');if(!root)return;
   root.innerHTML=
