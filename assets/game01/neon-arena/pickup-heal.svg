@@ -1,3 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dbfff0"/><stop offset=".35" stop-color="#57f0a4"/><stop offset="1" stop-color="#0a7147"/></linearGradient><filter id="f"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-<g filter="url(#f)"><circle cx="64" cy="64" r="49" fill="#0d2b25" stroke="#62f2ae" stroke-width="6"/><path d="M53 29h22v24h24v22H75v24H53V75H29V53h24z" fill="url(#g)"/></g></svg>
+<defs>
+ <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dffff1"/><stop offset=".4" stop-color="#5df5ac"/><stop offset="1" stop-color="#0d7b52"/></linearGradient>
+ <filter id="g" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<g filter="url(#g)">
+ <path d="m64 9 44 25v60l-44 25-44-25V34z" fill="#071b19" stroke="#42dc91" stroke-width="5"/>
+ <circle cx="64" cy="64" r="39" fill="#0b2d25" stroke="url(#ring)" stroke-width="5"/>
+ <path d="M54 34h20v20h20v20H74v20H54V74H34V54h20z" fill="url(#ring)"/>
+ <circle cx="64" cy="64" r="10" fill="#eafff2" opacity=".45"/>
+</g>
+</svg>
