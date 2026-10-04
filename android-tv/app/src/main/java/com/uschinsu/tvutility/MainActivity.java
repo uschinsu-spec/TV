@@ -159,10 +159,29 @@ public class MainActivity extends Activity {
                 famobiRunnerVisible = isFamobiOmNomUrl(url);
                 view.setVisibility(View.VISIBLE);
                 view.requestFocus(View.FOCUS_DOWN);
+
+                // Famobi's public launcher shows a visual PLAY splash that does not
+                // reliably accept Android TV Enter/gamepad input. Resolve its own
+                // official CDN game link and enter the real HTML5 game automatically.
+                if (famobiRunnerVisible && url != null && url.startsWith("https://play.famobi.com/")) {
+                    view.evaluateJavascript(
+                            "(function(){try{" +
+                            " function go(){" +
+                            "  var a=document.querySelector('a[href*=\"games.cdn.famobi.com\"][href*=\"om-nom-run\"]');" +
+                            "  if(a&&a.href){location.href=a.href;return true;}" +
+                            "  return false;" +
+                            " }" +
+                            " if(go())return;" +
+                            " var tries=0,t=setInterval(function(){tries++;if(go()||tries>80)clearInterval(t);},125);" +
+                            "}catch(e){}})();",
+                            null
+                    );
+                }
+
                 view.evaluateJavascript(
                         "(function(){try{" +
                         "window.__TV_NATIVE_GAMEPAD__=true;" +
-                        "window.__TV_NATIVE_APP_VERSION__='2.3';window.__TV_NATIVE_LOW_LATENCY__=true;window.__TV_NATIVE_ULTRA_60HZ__=true;window.__TV_NATIVE_LOCK_FREE_INPUT__=true;" +
+                        "window.__TV_NATIVE_APP_VERSION__='2.4';window.__TV_NATIVE_LOW_LATENCY__=true;window.__TV_NATIVE_ULTRA_60HZ__=true;window.__TV_NATIVE_LOCK_FREE_INPUT__=true;" +
                         "document.documentElement.setAttribute('tabindex','-1');" +
                         "document.documentElement.focus();" +
 
@@ -742,7 +761,7 @@ public class MainActivity extends Activity {
 
         // Xiaomi/Android TV remotes are normally SOURCE_DPAD/keyboard.
         // Forward D-pad, OK/Enter and Back to the same JS input bridge.
-        if (isHomeVisible() && isHomeNavigationKey(keyCode)) {
+        if ((isHomeVisible() || famobiRunnerVisible) && isHomeNavigationKey(keyCode)) {
             emitInputButton(event, true);
             return true;
         }
