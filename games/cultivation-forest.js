@@ -19,7 +19,7 @@ const imgs=Object.create(null),raster=Object.create(null);
 let assetsStarted=false,canvas=null,ctx=null,raf=0,lastFrame=0,running=false,onExit=null;
 let state=null,frameAvg=1/60;
 const keys=new Set(),pressed=new Set();
-const prev={a:false,b:false,start:false,x:false,y:false,left:false,right:false,up:false,down:false};
+const prev={a:false,b:false,start:false,xBtn:false,yBtn:false,left:false,right:false,up:false,down:false};
 const input={x:0,y:0,rx:0,ry:0,a:false,b:false,start:false,xBtn:false,yBtn:false,r2:false,aEdge:false,bEdge:false,startEdge:false,xEdge:false,yEdge:false,leftEdge:false,rightEdge:false,upEdge:false,downEdge:false};
 const upgrades=[
   {id:'blade',name:'Kiếm Ý',desc:'+25% sát thương kiếm',max:8},
@@ -117,7 +117,7 @@ function readInput(){
   input.xEdge=edge(input,'xBtn')||pressed.has('x');
   input.yEdge=edge(input,'yBtn')||pressed.has('y');
   input.leftEdge=left&&!prev.left;input.rightEdge=right&&!prev.right;input.upEdge=up&&!prev.up;input.downEdge=down&&!prev.down;
-  prev.a=input.a;prev.b=input.b;prev.start=input.start;prev.x=input.xBtn;prev.y=input.yBtn;prev.left=left;prev.right=right;prev.up=up;prev.down=down;
+  prev.a=input.a;prev.b=input.b;prev.start=input.start;prev.xBtn=input.xBtn;prev.yBtn=input.yBtn;prev.left=left;prev.right=right;prev.up=up;prev.down=down;
   pressed.clear();return input;
 }
 
@@ -161,9 +161,9 @@ function nearestTargets(maxCount,range,dirX=0,dirY=0){
   }
   return arr;
 }
-function attack(force=false){
-  const p=state.player;if(p.attackCd>0&&!force)return;
-  p.attackCd=force?Math.min(p.attackCd,.10):p.attackRate;
+function attack(boost=false){
+  const p=state.player;if(p.attackCd>0)return;
+  p.attackCd=p.attackRate*(boost?.55:1);
   let dx=input.rx,dy=input.ry;
   const rm=Math.hypot(dx,dy);
   if(rm>.07){dx/=rm;dy/=rm}else if(Math.hypot(input.x,input.y)>.15){dx=input.x;dy=input.y}else{dx=0;dy=0}
@@ -278,7 +278,7 @@ function update(dt){
   p.attackCd=Math.max(0,p.attackCd-dt);p.dashCd=Math.max(0,p.dashCd-dt);p.inv=Math.max(0,p.inv-dt);
   p.x=clamp(p.x+input.x*p.speed*dt,35,WORLD_W-35);p.y=clamp(p.y+input.y*p.speed*dt,35,WORLD_H-35);
   if(input.xEdge)dash();if(input.yEdge)bomb();
-  if(p.attackCd<=0)attack(false);if(input.a||input.r2)attack(true);
+  if(input.a||input.r2)attack(true);else if(p.attackCd<=0)attack(false);
   if(p.up.thunder){p.thunderCd-=dt;if(p.thunderCd<=0){p.thunderCd=Math.max(.75,3.1-p.up.thunder*.38);const l=nearestTargets(1,380);if(l.length){const e=l[0].e,d=p.damage*(.9+p.up.thunder*.38);e.hp-=d;state.slashes.push({x:e.x,y:e.y,t:.25,max:.25,color:'#9ee9ff',rot:-1.2});burst(e.x,e.y,14,'#8fdfff');if(e.hp<=0)killEnemy(e)}}}
   state.spawn-=dt;
   const max=Math.min(52,15+state.wave*3+Math.floor(state.level*.8));
