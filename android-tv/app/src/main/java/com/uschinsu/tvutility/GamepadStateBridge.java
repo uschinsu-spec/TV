@@ -2,8 +2,6 @@ package com.uschinsu.tvutility;
 
 import android.webkit.JavascriptInterface;
 
-import java.util.Locale;
-
 public final class GamepadStateBridge {
 
     private volatile boolean lowLatencyMode = false;
@@ -36,12 +34,17 @@ public final class GamepadStateBridge {
     private volatile boolean dpadRight = false;
     private volatile boolean dpadCenter = false;
 
+    // Rising-edge counters make very short button taps impossible to miss between 60 Hz frames.
+    private volatile long aPress = 0L;
+    private volatile long bPress = 0L;
+    private volatile long xPress = 0L;
+    private volatile long yPress = 0L;
+    private volatile long startPress = 0L;
+
     @JavascriptInterface
     public void setLowLatencyMode(boolean enabled) {
         lowLatencyMode = enabled;
-        if (!enabled) {
-            reset();
-        }
+        if (!enabled) reset();
     }
 
     public boolean isLowLatencyModeNative() {
@@ -50,6 +53,11 @@ public final class GamepadStateBridge {
 
     public void setDevice(String value) {
         device = value == null ? "" : value;
+    }
+
+    @JavascriptInterface
+    public String getDevice() {
+        return device;
     }
 
     public void setAxes(
@@ -69,75 +77,125 @@ public final class GamepadStateBridge {
     public void setButton(String name, boolean down) {
         if (name == null) return;
         switch (name) {
-            case "A": a = down; break;
-            case "B": b = down; break;
-            case "X": x = down; break;
-            case "Y": y = down; break;
+            case "A":
+                if (down && !a) aPress++;
+                a = down;
+                break;
+            case "B":
+                if (down && !b) bPress++;
+                b = down;
+                break;
+            case "X":
+                if (down && !x) xPress++;
+                x = down;
+                break;
+            case "Y":
+                if (down && !y) yPress++;
+                y = down;
+                break;
             case "L1": l1 = down; break;
             case "R1": r1 = down; break;
             case "L2": l2 = down; break;
             case "R2": r2 = down; break;
             case "SELECT": select = down; break;
-            case "START": start = down; break;
+            case "START":
+                if (down && !start) startPress++;
+                start = down;
+                break;
             case "L3": l3 = down; break;
             case "R3": r3 = down; break;
             case "DPAD_UP": dpadUp = down; break;
             case "DPAD_DOWN": dpadDown = down; break;
             case "DPAD_LEFT": dpadLeft = down; break;
             case "DPAD_RIGHT": dpadRight = down; break;
-            case "DPAD_CENTER": dpadCenter = down; break;
+            case "DPAD_CENTER":
+                if (down && !dpadCenter) aPress++;
+                dpadCenter = down;
+                break;
             default: break;
         }
     }
 
+    private int buttonMask() {
+        int mask = 0;
+        if (a) mask |= 1;
+        if (b) mask |= 2;
+        if (x) mask |= 4;
+        if (y) mask |= 8;
+        if (l1) mask |= 16;
+        if (r1) mask |= 32;
+        if (l2) mask |= 64;
+        if (r2) mask |= 128;
+        if (select) mask |= 256;
+        if (start) mask |= 512;
+        if (l3) mask |= 1024;
+        if (r3) mask |= 2048;
+        if (dpadUp) mask |= 4096;
+        if (dpadDown) mask |= 8192;
+        if (dpadLeft) mask |= 16384;
+        if (dpadRight) mask |= 32768;
+        if (dpadCenter) mask |= 65536;
+        return mask;
+    }
+
+    @JavascriptInterface
+    public String readPacked() {
+        if (!lowLatencyMode) return "";
+        StringBuilder s = new StringBuilder(128);
+        s.append(lx).append('|')
+                .append(ly).append('|')
+                .append(rx).append('|')
+                .append(ry).append('|')
+                .append(hatX).append('|')
+                .append(hatY).append('|')
+                .append(lt).append('|')
+                .append(rt).append('|')
+                .append(buttonMask()).append('|')
+                .append(aPress).append('|')
+                .append(bPress).append('|')
+                .append(xPress).append('|')
+                .append(yPress).append('|')
+                .append(startPress);
+        return s.toString();
+    }
+
+    // Kept for backward compatibility with older cached web builds.
     @JavascriptInterface
     public String readState() {
         if (!lowLatencyMode) return "";
-        return "{" +
-                "\"lx\":" + number(lx) +
-                ",\"ly\":" + number(ly) +
-                ",\"rx\":" + number(rx) +
-                ",\"ry\":" + number(ry) +
-                ",\"hatX\":" + number(hatX) +
-                ",\"hatY\":" + number(hatY) +
-                ",\"lt\":" + number(lt) +
-                ",\"rt\":" + number(rt) +
-                ",\"a\":" + a +
-                ",\"b\":" + b +
-                ",\"xButton\":" + x +
-                ",\"yButton\":" + y +
-                ",\"l1\":" + l1 +
-                ",\"r1\":" + r1 +
-                ",\"l2\":" + l2 +
-                ",\"r2\":" + r2 +
-                ",\"select\":" + select +
-                ",\"start\":" + start +
-                ",\"l3\":" + l3 +
-                ",\"r3\":" + r3 +
-                ",\"up\":" + dpadUp +
-                ",\"down\":" + dpadDown +
-                ",\"left\":" + dpadLeft +
-                ",\"right\":" + dpadRight +
-                ",\"dpadCenter\":" + dpadCenter +
-                ",\"device\":\"" + escape(device) + "\"" +
-                "}";
+        StringBuilder s = new StringBuilder(256);
+        s.append('{')
+                .append("\"lx\":").append(lx)
+                .append(",\"ly\":").append(ly)
+                .append(",\"rx\":").append(rx)
+                .append(",\"ry\":").append(ry)
+                .append(",\"hatX\":").append(hatX)
+                .append(",\"hatY\":").append(hatY)
+                .append(",\"lt\":").append(lt)
+                .append(",\"rt\":").append(rt)
+                .append(",\"a\":").append(a)
+                .append(",\"b\":").append(b)
+                .append(",\"xButton\":").append(x)
+                .append(",\"yButton\":").append(y)
+                .append(",\"l1\":").append(l1)
+                .append(",\"r1\":").append(r1)
+                .append(",\"l2\":").append(l2)
+                .append(",\"r2\":").append(r2)
+                .append(",\"select\":").append(select)
+                .append(",\"start\":").append(start)
+                .append(",\"up\":").append(dpadUp)
+                .append(",\"down\":").append(dpadDown)
+                .append(",\"left\":").append(dpadLeft)
+                .append(",\"right\":").append(dpadRight)
+                .append(",\"dpadCenter\":").append(dpadCenter)
+                .append('}');
+        return s.toString();
     }
 
     private synchronized void reset() {
         lx = ly = rx = ry = hatX = hatY = lt = rt = 0f;
         a = b = x = y = l1 = r1 = l2 = r2 = select = start = l3 = r3 = false;
         dpadUp = dpadDown = dpadLeft = dpadRight = dpadCenter = false;
-    }
-
-    private String number(float value) {
-        return String.format(Locale.US, "%.4f", value);
-    }
-
-    private String escape(String value) {
-        return value
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", " ")
-                .replace("\r", " ");
+        aPress = bPress = xPress = yPress = startPress = 0L;
     }
 }
