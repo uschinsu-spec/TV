@@ -37,6 +37,7 @@ public class MainActivity extends Activity {
     private int lastAxisDeviceId = -1;
     private boolean hasLastAxes = false;
     private boolean nativeTvFullscreen = false;
+    private GamepadStateBridge gamepadStateBridge;
     private float lastLx, lastLy, lastRx, lastRy, lastHatX, lastHatY, lastLt, lastRt;
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -79,6 +80,9 @@ public class MainActivity extends Activity {
         settings.setSupportMultipleWindows(false);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
+
+        gamepadStateBridge = new GamepadStateBridge();
+        webView.addJavascriptInterface(gamepadStateBridge, "TVNativeInput");
 
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
@@ -125,6 +129,7 @@ public class MainActivity extends Activity {
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
                 nativeTvFullscreen = false;
+                if (gamepadStateBridge != null) gamepadStateBridge.setLowLatencyMode(false);
                 enterImmersiveMode();
             }
 
@@ -136,7 +141,7 @@ public class MainActivity extends Activity {
                 view.evaluateJavascript(
                         "(function(){try{" +
                         "window.__TV_NATIVE_GAMEPAD__=true;" +
-                        "window.__TV_NATIVE_APP_VERSION__='2.0';" +
+                        "window.__TV_NATIVE_APP_VERSION__='2.1';window.__TV_NATIVE_LOW_LATENCY__=true;" +
                         "document.documentElement.setAttribute('tabindex','-1');" +
                         "document.documentElement.focus();" +
 
@@ -523,6 +528,33 @@ public class MainActivity extends Activity {
 
     private void emitGamepadAxes(MotionEvent event) {
         if (webView == null) return;
+
+        if (gamepadStateBridge != null && gamepadStateBridge.isLowLatencyModeNative()) {
+            float lx = centeredAxis(event, MotionEvent.AXIS_X);
+            float ly = centeredAxis(event, MotionEvent.AXIS_Y);
+            float rx = dominant(
+                    centeredAxis(event, MotionEvent.AXIS_Z),
+                    centeredAxis(event, MotionEvent.AXIS_RX)
+            );
+            float ry = dominant(
+                    centeredAxis(event, MotionEvent.AXIS_RZ),
+                    centeredAxis(event, MotionEvent.AXIS_RY)
+            );
+            float hatX = centeredAxis(event, MotionEvent.AXIS_HAT_X);
+            float hatY = centeredAxis(event, MotionEvent.AXIS_HAT_Y);
+            float lt = Math.max(
+                    triggerAxis(event, MotionEvent.AXIS_LTRIGGER),
+                    triggerAxis(event, MotionEvent.AXIS_BRAKE)
+            );
+            float rt = Math.max(
+                    triggerAxis(event, MotionEvent.AXIS_RTRIGGER),
+                    triggerAxis(event, MotionEvent.AXIS_GAS)
+            );
+            gamepadStateBridge.setDevice(controllerDeviceName(event.getDevice()));
+            gamepadStateBridge.setAxes(lx, ly, rx, ry, hatX, hatY, lt, rt);
+            return;
+        }
+
         long now = SystemClock.uptimeMillis();
         if (now - lastAxisDispatchAt < AXIS_DISPATCH_INTERVAL_MS) return;
         lastAxisDispatchAt = now;
@@ -598,7 +630,20 @@ public class MainActivity extends Activity {
             return true;
         }
 
-        // Keep the F710/native gamepad path that already works.
+        // GAME-only low-latency path: update native state directly, no evaluateJavascript queue.
+        if (isHomeVisible() &&
+                gamepadStateBridge != null &&
+                gamepadStateBridge.isLowLatencyModeNative() &&
+                (isGameControllerSource(event.getSource()) || isHomeNavigationKey(keyCode))) {
+            String name = (event.getKeyCode() == KeyEvent.KEYCODE_BACK)
+                    ? "B"
+                    : controllerButtonName(event.getKeyCode());
+            gamepadStateBridge.setDevice(controllerDeviceName(event.getDevice()));
+            gamepadStateBridge.setButton(name, event.getAction() == KeyEvent.ACTION_DOWN);
+            return true;
+        }
+
+        // Keep the F710/native gamepad path that already works outside active gameplay.
         if (isGameControllerSource(event.getSource())) {
             emitInputButton(event, false);
             if (isHomeVisible()) {
@@ -658,6 +703,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         nativeTvFullscreen = false;
+        if (gamepadStateBridge != null) gamepadStateBridge.setLowLatencyMode(false);
         if (webView != null) {
             webView.loadUrl("about:blank");
             webView.stopLoading();
