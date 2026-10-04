@@ -1,4 +1,4 @@
-const VERSION='8.1.0';
+const VERSION='8.2.0';
 const $=id=>document.getElementById(id);
 const els={
   clock:$('clock'),today:$('today'),greeting:$('greeting'),
@@ -45,7 +45,7 @@ function openApp(name,from){
   els.panel.dataset.app=name;
   els.panel.classList.add('open');
   els.panel.setAttribute('aria-hidden','false');
-  window.TVInput?.setGameMode?.(name==='game');
+  window.TVInput?.setGameMode?.(false);
   if(name==='tv'){
     els.panelTitle.textContent='Xem TV';
     els.panelEyebrow.textContent='TRUYỀN HÌNH TRỰC TIẾP';
