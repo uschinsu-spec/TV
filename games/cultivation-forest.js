@@ -103,7 +103,6 @@ function saveMeta(){
       spirit:state.player.spirit,
       bestLevel:Math.max(old.bestLevel||0,state.level),
       bestKills:Math.max(old.bestKills||0,state.kills),
-      bestLevel:Math.max(old.bestLevel||0,state.level),
       bestRealm:realm(Math.max(old.bestLevel||0,state.level))
     }));
   }catch(e){}
@@ -481,7 +480,9 @@ function start(opts={}){
   document.addEventListener('keydown',keyDown,true);document.addEventListener('keyup',keyUp,true);window.requestTVFullscreen?.();raf=requestAnimationFrame(frame);
 }
 function stop(){
-  if(!running&& !canvas)return;running=false;cancelAnimationFrame(raf);raf=0;keys.clear();pressed.clear();
+  if(!running&& !canvas)return;
+  if(state?.player)saveMeta();
+  running=false;cancelAnimationFrame(raf);raf=0;keys.clear();pressed.clear();
   document.removeEventListener('keydown',keyDown,true);document.removeEventListener('keyup',keyUp,true);
   document.body.classList.remove('game-running');document.getElementById('appPanel')?.classList.remove('game-running','custom-game-running');window.tvGameActive=false;window.TVInput?.setGameMode?.(false);
   canvas=null;ctx=null;state=null;lastFrame=0;
