@@ -26,6 +26,7 @@ public class MainActivity extends Activity {
 
     private static final String HOME_URL = "https://uschinsu-spec.github.io/TV/";
     private static final float STICK_DEADZONE = 0.16f;
+    private static final float GAME_STICK_DEADZONE = 0.10f;
     private static final float AXIS_CHANGE_EPSILON = 0.025f;
     private static final long AXIS_DISPATCH_INTERVAL_MS = 20L;
 
@@ -455,7 +456,8 @@ public class MainActivity extends Activity {
         InputDevice.MotionRange range = device.getMotionRange(axis);
         if (range == null) return 0f;
         float value = event.getAxisValue(axis);
-        float flat = Math.max(STICK_DEADZONE, range.getFlat());
+        float requestedDeadzone = (gamepadStateBridge != null && gamepadStateBridge.isLowLatencyModeNative()) ? GAME_STICK_DEADZONE : STICK_DEADZONE;
+        float flat = Math.max(requestedDeadzone, range.getFlat());
         return Math.abs(value) <= flat ? 0f : clamp(value, -1f, 1f);
     }
 
