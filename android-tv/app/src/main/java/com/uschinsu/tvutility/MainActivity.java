@@ -3,9 +3,11 @@ package com.uschinsu.tvutility;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.Display;
+import android.view.Gravity;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -20,6 +22,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 
 import java.util.Locale;
 
@@ -43,6 +46,12 @@ public class MainActivity extends Activity {
     private boolean nativeTvFullscreen = false;
     private boolean homeVisible = false;
     private boolean famobiRunnerVisible = false;
+    private boolean externalCursorMode = true;
+    private View externalCursor;
+    private TextView externalHint;
+    private float externalCursorX = 0f;
+    private float externalCursorY = 0f;
+    private long lastExternalCursorAxisMoveAt = 0L;
     private GamepadStateBridge gamepadStateBridge;
     private float lastLx, lastLy, lastRx, lastRy, lastHatX, lastHatY, lastLt, lastRt;
 
@@ -82,6 +91,7 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
         ));
+        initExternalGameControls();
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -147,8 +157,18 @@ public class MainActivity extends Activity {
                 super.onPageStarted(view, url, favicon);
                 nativeTvFullscreen = false;
                 homeVisible = isHomeOrigin(url);
-                if (homeVisible) famobiRunnerVisible = false;
-                else if (isFamobiOmNomUrl(url) || famobiRunnerVisible) famobiRunnerVisible = true;
+                if (homeVisible) {
+                    famobiRunnerVisible = false;
+                    hideExternalGameControls();
+                } else if (isFamobiOmNomUrl(url) || famobiRunnerVisible) {
+                    boolean enteringFamobi = !famobiRunnerVisible;
+                    famobiRunnerVisible = true;
+                    if (enteringFamobi || (url != null && url.contains("/wrapper/om-nom-run/"))) {
+                        setExternalCursorMode(true);
+                    } else {
+                        showExternalGameControls();
+                    }
+                }
                 if (gamepadStateBridge != null) gamepadStateBridge.setLowLatencyMode(false);
                 enterImmersiveMode();
             }
@@ -157,8 +177,13 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 homeVisible = isHomeOrigin(url);
-                if (homeVisible) famobiRunnerVisible = false;
-                else if (isFamobiOmNomUrl(url) || famobiRunnerVisible) famobiRunnerVisible = true;
+                if (homeVisible) {
+                    famobiRunnerVisible = false;
+                    hideExternalGameControls();
+                } else if (isFamobiOmNomUrl(url) || famobiRunnerVisible) {
+                    famobiRunnerVisible = true;
+                    showExternalGameControls();
+                }
                 view.setVisibility(View.VISIBLE);
                 view.requestFocus(View.FOCUS_DOWN);
 
@@ -166,7 +191,7 @@ public class MainActivity extends Activity {
                 view.evaluateJavascript(
                         "(function(){try{" +
                         "window.__TV_NATIVE_GAMEPAD__=true;" +
-                        "window.__TV_NATIVE_APP_VERSION__='2.5';window.__TV_NATIVE_LOW_LATENCY__=true;window.__TV_NATIVE_ULTRA_60HZ__=true;window.__TV_NATIVE_LOCK_FREE_INPUT__=true;" +
+                        "window.__TV_NATIVE_APP_VERSION__='2.6';window.__TV_NATIVE_LOW_LATENCY__=true;window.__TV_NATIVE_ULTRA_60HZ__=true;window.__TV_NATIVE_LOCK_FREE_INPUT__=true;" +
                         "document.documentElement.setAttribute('tabindex','-1');" +
                         "document.documentElement.focus();" +
 
@@ -269,17 +294,9 @@ public class MainActivity extends Activity {
         return url != null && url.contains("famobi.com") && url.contains("om-nom-run");
     }
 
-    private boolean isFamobiActivateKey(int keyCode) {
-        return keyCode == KeyEvent.KEYCODE_BUTTON_A ||
-                keyCode == KeyEvent.KEYCODE_DPAD_CENTER ||
-                keyCode == KeyEvent.KEYCODE_ENTER ||
-                keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER ||
-                keyCode == KeyEvent.KEYCODE_SPACE ||
-                keyCode == KeyEvent.KEYCODE_BUTTON_START;
-    }
-
     private void returnFromFamobiToHub() {
         famobiRunnerVisible = false;
+        hideExternalGameControls();
         if (gamepadStateBridge != null) gamepadStateBridge.setLowLatencyMode(false);
         if (webView != null) {
             webView.stopLoading();
@@ -287,63 +304,184 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void tapFamobiPlay() {
-        if (webView == null) return;
+    private int dp(float value) {
+        return Math.max(1, Math.round(value * getResources().getDisplayMetrics().density));
+    }
 
-        // Try the launcher's own DOM element first. Return its CSS centre as
-        // x|y|viewportWidth|viewportHeight so Android can also send a native tap.
-        webView.evaluateJavascript(
-                "(function(){try{" +
-                " var sels=['button','a','[role=button]','[onclick]','[class*=play]','[id*=play]'];" +
-                " var all=[];for(var s of sels){try{all=all.concat(Array.from(document.querySelectorAll(s)));}catch(e){}}" +
-                " var best=null,score=-1;" +
-                " for(var el of all){var r=el.getBoundingClientRect();if(r.width<28||r.height<28)continue;" +
-                "  var st=getComputedStyle(el);if(st.display==='none'||st.visibility==='hidden'||+st.opacity===0)continue;" +
-                "  var txt=((el.innerText||'')+' '+(el.getAttribute('aria-label')||'')+' '+(el.getAttribute('title')||'')+' '+(el.className||'')+' '+(el.id||'')).toLowerCase();" +
-                "  var sc=(/play|start|launch/.test(txt)?1000000:0)+(r.width*r.height)-Math.abs((r.left+r.width/2)-innerWidth/2)*20-Math.abs((r.top+r.height/2)-innerHeight/2)*20;" +
-                "  if(sc>score){score=sc;best=el;}" +
-                " }" +
-                " var x=innerWidth/2,y=innerHeight/2;" +
-                " if(best){var r=best.getBoundingClientRect();x=r.left+r.width/2;y=r.top+r.height/2;try{best.focus();}catch(e){};try{best.click();}catch(e){}}" +
-                " else {var el=document.elementFromPoint(x,y);if(el){try{el.click();}catch(e){}}}" +
-                " return x+'|'+y+'|'+innerWidth+'|'+innerHeight;" +
-                "}catch(e){return '';}})();",
-                value -> runOnUiThread(() -> {
-                    if (webView == null) return;
+    private void initExternalGameControls() {
+        externalCursor = new View(this);
+        GradientDrawable cursorBackground = new GradientDrawable();
+        cursorBackground.setShape(GradientDrawable.OVAL);
+        cursorBackground.setColor(0xF2FFFFFF);
+        cursorBackground.setStroke(dp(3f), 0xFF00D8FF);
+        externalCursor.setBackground(cursorBackground);
+        externalCursor.setClickable(false);
+        externalCursor.setFocusable(false);
+        externalCursor.setElevation(dp(12f));
+        externalCursor.setVisibility(View.GONE);
+        root.addView(externalCursor, new FrameLayout.LayoutParams(dp(28f), dp(28f)));
 
-                    float x = webView.getWidth() * 0.5f;
-                    float y = webView.getHeight() * 0.5f;
-                    try {
-                        String raw = value == null ? "" : value;
-                        if (raw.startsWith("\"") && raw.endsWith("\"") && raw.length() >= 2) {
-                            raw = raw.substring(1, raw.length() - 1);
-                        }
-                        String[] p = raw.split("\\|");
-                        if (p.length == 4) {
-                            float cssX = Float.parseFloat(p[0]);
-                            float cssY = Float.parseFloat(p[1]);
-                            float cssW = Float.parseFloat(p[2]);
-                            float cssH = Float.parseFloat(p[3]);
-                            if (cssW > 0f && cssH > 0f) {
-                                x = cssX * webView.getWidth() / cssW;
-                                y = cssY * webView.getHeight() / cssH;
-                            }
-                        }
-                    } catch (Exception ignored) {
-                    }
-
-                    long t = SystemClock.uptimeMillis();
-                    MotionEvent down = MotionEvent.obtain(t, t, MotionEvent.ACTION_DOWN, x, y, 0);
-                    MotionEvent up = MotionEvent.obtain(t, t + 55L, MotionEvent.ACTION_UP, x, y, 0);
-                    try {
-                        webView.dispatchTouchEvent(down);
-                        webView.dispatchTouchEvent(up);
-                    } finally {
-                        down.recycle();
-                        up.recycle();
-                    }
-                })
+        externalHint = new TextView(this);
+        externalHint.setTextColor(0xFFFFFFFF);
+        externalHint.setTextSize(16f);
+        externalHint.setGravity(Gravity.CENTER);
+        externalHint.setPadding(dp(18f), dp(8f), dp(18f), dp(8f));
+        externalHint.setBackgroundColor(0xCC10151D);
+        externalHint.setClickable(false);
+        externalHint.setFocusable(false);
+        externalHint.setElevation(dp(11f));
+        externalHint.setVisibility(View.GONE);
+        FrameLayout.LayoutParams hintParams = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
         );
+        hintParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        hintParams.bottomMargin = dp(22f);
+        root.addView(externalHint, hintParams);
+    }
+
+    private void showExternalGameControls() {
+        if (!famobiRunnerVisible || externalCursor == null || externalHint == null) return;
+        externalHint.setVisibility(View.VISIBLE);
+        if (externalCursorMode) {
+            externalCursor.setVisibility(View.VISIBLE);
+            externalHint.setText("CURSOR MODE  •  D-pad/Stick: di chuyển  •  A/OK: click  •  X/giữ OK: GAME MODE  •  B: quay lại");
+            if (externalCursorX <= 0f || externalCursorY <= 0f) {
+                root.post(this::centerExternalCursor);
+            } else {
+                placeExternalCursor();
+            }
+        } else {
+            externalCursor.setVisibility(View.GONE);
+            externalHint.setText("GAME MODE  •  D-pad/Stick: điều khiển game  •  X/giữ OK: CURSOR  •  B: quay lại");
+        }
+    }
+
+    private void hideExternalGameControls() {
+        if (externalCursor != null) externalCursor.setVisibility(View.GONE);
+        if (externalHint != null) externalHint.setVisibility(View.GONE);
+        externalCursorX = 0f;
+        externalCursorY = 0f;
+    }
+
+    private void setExternalCursorMode(boolean cursorMode) {
+        externalCursorMode = cursorMode;
+        showExternalGameControls();
+    }
+
+    private void centerExternalCursor() {
+        if (root == null) return;
+        externalCursorX = root.getWidth() * 0.5f;
+        externalCursorY = root.getHeight() * 0.5f;
+        placeExternalCursor();
+    }
+
+    private void placeExternalCursor() {
+        if (externalCursor == null || root == null) return;
+        int size = externalCursor.getLayoutParams() != null ? externalCursor.getLayoutParams().width : dp(28f);
+        float half = Math.max(1f, size * 0.5f);
+        float maxX = Math.max(half, root.getWidth() - half);
+        float maxY = Math.max(half, root.getHeight() - half);
+        externalCursorX = clamp(externalCursorX, half, maxX);
+        externalCursorY = clamp(externalCursorY, half, maxY);
+        externalCursor.setX(externalCursorX - half);
+        externalCursor.setY(externalCursorY - half);
+        externalCursor.bringToFront();
+        if (externalHint != null) externalHint.bringToFront();
+    }
+
+    private void moveExternalCursor(float dx, float dy) {
+        if (!famobiRunnerVisible || !externalCursorMode) return;
+        if (externalCursorX <= 0f || externalCursorY <= 0f) centerExternalCursor();
+        externalCursorX += dx;
+        externalCursorY += dy;
+        placeExternalCursor();
+    }
+
+    private void clickExternalCursor() {
+        if (webView == null || !famobiRunnerVisible) return;
+        if (externalCursorX <= 0f || externalCursorY <= 0f) centerExternalCursor();
+
+        float x = externalCursorX;
+        float y = externalCursorY;
+        long t = SystemClock.uptimeMillis();
+        MotionEvent down = MotionEvent.obtain(t, t, MotionEvent.ACTION_DOWN, x, y, 0);
+        MotionEvent up = MotionEvent.obtain(t, t + 55L, MotionEvent.ACTION_UP, x, y, 0);
+        try {
+            webView.dispatchTouchEvent(down);
+            webView.dispatchTouchEvent(up);
+        } finally {
+            down.recycle();
+            up.recycle();
+        }
+    }
+
+    private boolean handleExternalCursorKey(KeyEvent event) {
+        if (!famobiRunnerVisible) return false;
+        int keyCode = event.getKeyCode();
+
+        if (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_BUTTON_B) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN) returnFromFamobiToHub();
+            return true;
+        }
+
+        if (keyCode == KeyEvent.KEYCODE_BUTTON_X || keyCode == KeyEvent.KEYCODE_MENU) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
+                setExternalCursorMode(!externalCursorMode);
+            }
+            return true;
+        }
+
+        boolean activate =
+                keyCode == KeyEvent.KEYCODE_BUTTON_A ||
+                keyCode == KeyEvent.KEYCODE_DPAD_CENTER ||
+                keyCode == KeyEvent.KEYCODE_ENTER ||
+                keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER ||
+                keyCode == KeyEvent.KEYCODE_SPACE ||
+                keyCode == KeyEvent.KEYCODE_BUTTON_START;
+
+        if (activate && event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() >= 7) {
+            setExternalCursorMode(!externalCursorMode);
+            return true;
+        }
+
+        if (!externalCursorMode) return false;
+
+        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+            float step = dp(event.getRepeatCount() > 0 ? 54f : 82f);
+            switch (keyCode) {
+                case KeyEvent.KEYCODE_DPAD_LEFT:
+                    moveExternalCursor(-step, 0f);
+                    return true;
+                case KeyEvent.KEYCODE_DPAD_RIGHT:
+                    moveExternalCursor(step, 0f);
+                    return true;
+                case KeyEvent.KEYCODE_DPAD_UP:
+                    moveExternalCursor(0f, -step);
+                    return true;
+                case KeyEvent.KEYCODE_DPAD_DOWN:
+                    moveExternalCursor(0f, step);
+                    return true;
+                default:
+                    break;
+            }
+            if (activate && event.getRepeatCount() == 0) {
+                clickExternalCursor();
+                return true;
+            }
+        }
+
+        if (event.getAction() == KeyEvent.ACTION_UP) {
+            if (activate ||
+                    keyCode == KeyEvent.KEYCODE_DPAD_LEFT ||
+                    keyCode == KeyEvent.KEYCODE_DPAD_RIGHT ||
+                    keyCode == KeyEvent.KEYCODE_DPAD_UP ||
+                    keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void prefer60HzDisplayMode() {
@@ -785,20 +923,10 @@ public class MainActivity extends Activity {
             return true;
         }
 
-        // External GAME 04 safety controls. Back/B must always escape to the Hub,
-        // regardless of redirects/history. A/OK/Enter activates the Famobi PLAY splash
-        // using both a DOM click and a native WebView tap.
-        if (famobiRunnerVisible) {
-            if (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_BUTTON_B) {
-                if (event.getAction() == KeyEvent.ACTION_DOWN) returnFromFamobiToHub();
-                return true;
-            }
-            if (isFamobiActivateKey(keyCode)) {
-                if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
-                    tapFamobiPlay();
-                }
-                return true;
-            }
+        // External web games use a native TV cursor for cookie dialogs, Play buttons
+        // and other mouse-only UI. X (or long OK) toggles back to keyboard/game mode.
+        if (handleExternalCursorKey(event)) {
+            return true;
         }
 
         // GAME-only ultra-low-latency path: write native bit state directly.
@@ -850,6 +978,21 @@ public class MainActivity extends Activity {
     @Override
     public boolean dispatchGenericMotionEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_MOVE && isGameControllerSource(event.getSource())) {
+            if (famobiRunnerVisible && externalCursorMode) {
+                float lx = centeredAxis(event, MotionEvent.AXIS_X);
+                float ly = centeredAxis(event, MotionEvent.AXIS_Y);
+                float hx = centeredAxis(event, MotionEvent.AXIS_HAT_X);
+                float hy = centeredAxis(event, MotionEvent.AXIS_HAT_Y);
+                float x = dominant(hx, lx);
+                float y = dominant(hy, ly);
+                long now = SystemClock.uptimeMillis();
+                if ((Math.abs(x) > 0.16f || Math.abs(y) > 0.16f) &&
+                        now - lastExternalCursorAxisMoveAt >= 28L) {
+                    lastExternalCursorAxisMoveAt = now;
+                    moveExternalCursor(x * dp(34f), y * dp(34f));
+                }
+                return true;
+            }
             if (gamepadStateBridge != null && gamepadStateBridge.isLowLatencyModeNative() && webView != null) {
                 // Ask Android not to batch subsequent motion samples while a game is active.
                 // This reduces joystick latency on devices/firmware that buffer MotionEvents.
@@ -889,6 +1032,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         nativeTvFullscreen = false;
+        hideExternalGameControls();
         if (gamepadStateBridge != null) gamepadStateBridge.setLowLatencyMode(false);
         if (webView != null) {
             webView.loadUrl("about:blank");
