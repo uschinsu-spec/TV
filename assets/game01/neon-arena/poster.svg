@@ -1,21 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">
 <defs>
- <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071827"/><stop offset=".48" stop-color="#13102a"/><stop offset="1" stop-color="#2a0d35"/></linearGradient>
- <radialGradient id="r"><stop stop-color="#56f1ff" stop-opacity=".36"/><stop offset="1" stop-color="#56f1ff" stop-opacity="0"/></radialGradient>
- <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#061524"/><stop offset=".5" stop-color="#0b1021"/><stop offset="1" stop-color="#260b32"/></linearGradient>
+ <radialGradient id="halo"><stop stop-color="#34e9ff" stop-opacity=".34"/><stop offset=".55" stop-color="#155aa2" stop-opacity=".08"/><stop offset="1" stop-color="#07101b" stop-opacity="0"/></radialGradient>
+ <linearGradient id="ship" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eaffff"/><stop offset=".22" stop-color="#6bf4ff"/><stop offset=".62" stop-color="#1d78df"/><stop offset="1" stop-color="#1a214e"/></linearGradient>
+ <linearGradient id="enemy" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e7b9ff"/><stop offset=".55" stop-color="#8d4dff"/><stop offset="1" stop-color="#33145f"/></linearGradient>
+ <filter id="g" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
 </defs>
 <rect width="900" height="500" rx="32" fill="url(#bg)"/>
-<circle cx="440" cy="250" r="250" fill="url(#r)"/>
-<g opacity=".2" stroke="#60edff"><path d="M0 400 900 120M0 470 900 190M0 330 900 50" /></g>
-<g transform="translate(370 110) scale(.9)" filter="url(#glow)">
- <path d="M226 128 90 43l25 63-75 22 75 22-25 63z" fill="#52eafa" stroke="#dffcff" stroke-width="6" stroke-linejoin="round"/>
- <circle cx="139" cy="128" r="24" fill="#fff"/><circle cx="139" cy="128" r="10" fill="#1bc5ff"/>
+<circle cx="525" cy="248" r="300" fill="url(#halo)"/>
+<g opacity=".13" stroke="#5aeaff"><path d="M0 430 900 90M0 490 900 150M80 500 900 190"/></g>
+<g opacity=".14" fill="none" stroke="#89eaff"><ellipse cx="520" cy="250" rx="310" ry="180"/><ellipse cx="520" cy="250" rx="230" ry="130"/></g>
+
+<g transform="translate(366 97) scale(1.05)" filter="url(#g)">
+ <path d="M232 128 151 83 72 72l27 39-68 17 68 17-27 39 79-11z" fill="#102849" stroke="#61efff" stroke-width="4"/>
+ <path d="M226 128 151 96 94 128l57 32z" fill="url(#ship)" stroke="#e8feff" stroke-width="3"/>
+ <path d="M93 116 42 128l51 12-19-12z" fill="#d35bff"/>
+ <circle cx="143" cy="128" r="25" fill="#08243b" stroke="#72f5ff" stroke-width="4"/>
+ <circle cx="143" cy="128" r="14" fill="#d9ffff"/>
 </g>
-<g filter="url(#glow)" opacity=".9">
- <circle cx="120" cy="130" r="34" fill="#9d5cff"/><rect x="730" y="90" width="70" height="70" rx="14" fill="#ef537e"/>
- <path d="M690 360 610 320l20 35-35 12 35 12-20 35z" fill="#ffad45"/>
+
+<g transform="translate(100 92)" filter="url(#g)">
+ <circle cx="56" cy="56" r="46" fill="#130c2a" stroke="url(#enemy)" stroke-width="7"/>
+ <path d="M56 0v18M56 94v18M0 56h18M94 56h18" stroke="#9f65ff" stroke-width="8" stroke-linecap="round"/>
+ <circle cx="56" cy="56" r="18" fill="#ff55db"/>
 </g>
-<text x="48" y="78" fill="#83efff" font-family="Arial, sans-serif" font-size="18" font-weight="700" letter-spacing="5">GAME 01 · ORIGINAL</text>
-<text x="48" y="390" fill="#fff" font-family="Arial, sans-serif" font-size="74" font-weight="900" letter-spacing="-3">NEON ARENA</text>
-<text x="52" y="430" fill="#9ec2d8" font-family="Arial, sans-serif" font-size="22" font-weight="700">SURVIVAL · TWIN-STICK · CONTROLLER FIRST</text>
+<g transform="translate(705 84)" filter="url(#g)">
+ <path d="M20 20h105l18 18v105l-18 18H20L2 143V38z" fill="#5c173c" stroke="#ff6e9d" stroke-width="6"/>
+ <circle cx="72" cy="90" r="27" fill="#160b16" stroke="#ff9abb" stroke-width="5"/>
+ <circle cx="72" cy="90" r="12" fill="#fff"/>
+</g>
+<g transform="translate(662 302)" filter="url(#g)">
+ <path d="M150 60 67 21 18 8l24 39L2 60l40 13-24 39 49-13z" fill="#9d3622" stroke="#ffb04a" stroke-width="5"/>
+ <path d="M148 60 82 39 51 60l31 21z" fill="#ffd15e"/>
+</g>
+
+<text x="48" y="67" fill="#75efff" font-family="Arial, sans-serif" font-size="17" font-weight="800" letter-spacing="5">GAME 01 · TV EXCLUSIVE</text>
+<text x="48" y="390" fill="#fff" font-family="Arial, sans-serif" font-size="72" font-weight="900" letter-spacing="-3">NEON ARENA</text>
+<text x="52" y="428" fill="#a8c9dc" font-family="Arial, sans-serif" font-size="21" font-weight="700" letter-spacing="1">SURVIVAL · TWIN-STICK · CONTROLLER FIRST</text>
+<rect x="50" y="449" width="235" height="4" rx="2" fill="#56efff"/>
+<rect x="291" y="449" width="80" height="4" rx="2" fill="#c65cff"/>
 </svg>
