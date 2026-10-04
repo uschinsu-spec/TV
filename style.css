@@ -1225,6 +1225,8 @@ body.game-running{overflow:hidden}
   position:absolute;
   inset:0;
   z-index:1;
+  border:0;
+  transform:none;
   background:linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.3));
   pointer-events:none;
 }
