@@ -1035,7 +1035,8 @@ body.game-running{overflow:hidden}
 .html5-game-card[data-theme="adventure"] .html5-cover{background:linear-gradient(145deg,#285641,#172d27 56%,#243928)}
 .html5-game-card[data-theme="retro"] .html5-cover{background:linear-gradient(145deg,#7b3b31,#39243b 50%,#10253e)}
 .html5-game-card[data-theme="temple"] .html5-cover{background:linear-gradient(145deg,#78643d,#2f2b28 55%,#17232d)}
-.html5-game-card[data-theme="rpg"] .html5-cover{background:linear-gradient(145deg,#56382e,#25202c 55%,#162231)}\n.html5-game-card[data-theme="soccer"] .html5-cover{background:linear-gradient(145deg,#1d6d3b,#123b2a 54%,#0b2430)}
+.html5-game-card[data-theme="rpg"] .html5-cover{background:linear-gradient(145deg,#56382e,#25202c 55%,#162231)}
+.html5-game-card[data-theme="soccer"] .html5-cover{background:linear-gradient(145deg,#1d6d3b,#123b2a 54%,#0b2430)}
 .html5-info{
   min-height:0;
   display:flex;
@@ -1211,11 +1212,23 @@ body.game-running{overflow:hidden}
   letter-spacing:.14em;
   color:#9deeff;
 }
-.custom-game-symbol{
-  position:relative;
-  z-index:2;
-  font-size:clamp(82px,9vw,150px);
-  filter:drop-shadow(0 12px 22px rgba(70,228,255,.28));
+.custom-game-poster{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+.custom-game-art::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:1;
+  border:0;
+  transform:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.3));
+  pointer-events:none;
 }
 .custom-game-tag{
   position:absolute;

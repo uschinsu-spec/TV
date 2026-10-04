@@ -18,7 +18,7 @@ function renderMenu(){
       '</div>'+
       '<div class="custom-game-list">'+
         '<button id="launchNeonArena" class="custom-game-card focusable">'+
-          '<span class="custom-game-art"><span class="custom-game-number">GAME 01</span><span class="custom-game-symbol">⚡</span><span class="custom-game-tag">ARENA ACTION</span></span>'+
+          '<span class="custom-game-art"><img class="custom-game-poster" src="./assets/game01/neon-arena/poster.svg" alt=""><span class="custom-game-number">GAME 01</span><span class="custom-game-tag">ARENA ACTION</span></span>'+
           '<span class="custom-game-copy"><strong>NEON ARENA</strong><span>Survival · Twin-stick · Original</span>'+
           '<em>Sống sót qua từng wave quái. Di chuyển bằng cần trái, ngắm bằng cần phải, A/R2 bắn, X dash, Y thả bom.</em>'+
           '<b>A / OK · CHƠI</b></span>'+
