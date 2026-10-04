@@ -290,8 +290,8 @@ public class MainActivity extends Activity {
     private void tapFamobiPlay() {
         if (webView == null) return;
 
-        // First try the launcher's own DOM element. If it is rendered as canvas/image,
-        // fall back to a native WebView tap near the visual centre.
+        // Try the launcher's own DOM element first. Return its CSS centre as
+        // x|y|viewportWidth|viewportHeight so Android can also send a native tap.
         webView.evaluateJavascript(
                 "(function(){try{" +
                 " var sels=['button','a','[role=button]','[onclick]','[class*=play]','[id*=play]'];" +
@@ -303,48 +303,46 @@ public class MainActivity extends Activity {
                 "  var sc=(/play|start|launch/.test(txt)?1000000:0)+(r.width*r.height)-Math.abs((r.left+r.width/2)-innerWidth/2)*20-Math.abs((r.top+r.height/2)-innerHeight/2)*20;" +
                 "  if(sc>score){score=sc;best=el;}" +
                 " }" +
-                " if(best){var r=best.getBoundingClientRect();try{best.focus();}catch(e){};try{best.click();}catch(e){};" +
-                "  return JSON.stringify({x:r.left+r.width/2,y:r.top+r.height/2,w:innerWidth,h:innerHeight});}" +
-                " var x=innerWidth/2,y=innerHeight/2,el=document.elementFromPoint(x,y);if(el){try{el.click();}catch(e){}};" +
-                " return JSON.stringify({x:x,y:y,w:innerWidth,h:innerHeight});" +
+                " var x=innerWidth/2,y=innerHeight/2;" +
+                " if(best){var r=best.getBoundingClientRect();x=r.left+r.width/2;y=r.top+r.height/2;try{best.focus();}catch(e){};try{best.click();}catch(e){}}" +
+                " else {var el=document.elementFromPoint(x,y);if(el){try{el.click();}catch(e){}}}" +
+                " return x+'|'+y+'|'+innerWidth+'|'+innerHeight;" +
                 "}catch(e){return '';}})();",
-                value -> {
-                    runOnUiThread(() -> {
-                        if (webView == null) return;
-                        float x = webView.getWidth() * 0.5f;
-                        float y = webView.getHeight() * 0.5f;
-                        try {
-                            String raw = value == null ? "" : value.replace("\\", "").replace("\"", """);
-                            int xi = raw.indexOf("\"x\":");
-                            int yi = raw.indexOf(",\"y\":");
-                            int wi = raw.indexOf(",\"w\":");
-                            int hi = raw.indexOf(",\"h\":");
-                            if (xi >= 0 && yi > xi && wi > yi && hi > wi) {
-                                float cssX = Float.parseFloat(raw.substring(xi + 4, yi));
-                                float cssY = Float.parseFloat(raw.substring(yi + 5, wi));
-                                float cssW = Float.parseFloat(raw.substring(wi + 5, hi));
-                                int end = raw.indexOf('}', hi);
-                                float cssH = Float.parseFloat(raw.substring(hi + 5, end > hi ? end : raw.length()));
-                                if (cssW > 0 && cssH > 0) {
-                                    x = cssX * webView.getWidth() / cssW;
-                                    y = cssY * webView.getHeight() / cssH;
-                                }
-                            }
-                        } catch (Exception ignored) {
-                        }
+                value -> runOnUiThread(() -> {
+                    if (webView == null) return;
 
-                        long t = SystemClock.uptimeMillis();
-                        MotionEvent down = MotionEvent.obtain(t, t, MotionEvent.ACTION_DOWN, x, y, 0);
-                        MotionEvent up = MotionEvent.obtain(t, t + 55L, MotionEvent.ACTION_UP, x, y, 0);
-                        try {
-                            webView.dispatchTouchEvent(down);
-                            webView.dispatchTouchEvent(up);
-                        } finally {
-                            down.recycle();
-                            up.recycle();
+                    float x = webView.getWidth() * 0.5f;
+                    float y = webView.getHeight() * 0.5f;
+                    try {
+                        String raw = value == null ? "" : value;
+                        if (raw.startsWith("\"") && raw.endsWith("\"") && raw.length() >= 2) {
+                            raw = raw.substring(1, raw.length() - 1);
                         }
-                    });
-                }
+                        String[] p = raw.split("\\|");
+                        if (p.length == 4) {
+                            float cssX = Float.parseFloat(p[0]);
+                            float cssY = Float.parseFloat(p[1]);
+                            float cssW = Float.parseFloat(p[2]);
+                            float cssH = Float.parseFloat(p[3]);
+                            if (cssW > 0f && cssH > 0f) {
+                                x = cssX * webView.getWidth() / cssW;
+                                y = cssY * webView.getHeight() / cssH;
+                            }
+                        }
+                    } catch (Exception ignored) {
+                    }
+
+                    long t = SystemClock.uptimeMillis();
+                    MotionEvent down = MotionEvent.obtain(t, t, MotionEvent.ACTION_DOWN, x, y, 0);
+                    MotionEvent up = MotionEvent.obtain(t, t + 55L, MotionEvent.ACTION_UP, x, y, 0);
+                    try {
+                        webView.dispatchTouchEvent(down);
+                        webView.dispatchTouchEvent(up);
+                    } finally {
+                        down.recycle();
+                        up.recycle();
+                    }
+                })
         );
     }
 
