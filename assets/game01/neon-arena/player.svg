@@ -1,15 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
 <defs>
- <linearGradient id="body" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dffcff"/><stop offset=".35" stop-color="#5df3ff"/><stop offset=".72" stop-color="#357dff"/><stop offset="1" stop-color="#3b1b75"/></linearGradient>
- <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#68f5ff"/><stop offset="1" stop-color="#b45cff"/></linearGradient>
- <radialGradient id="core"><stop stop-color="#fff"/><stop offset=".35" stop-color="#89fbff"/><stop offset="1" stop-color="#118dc4"/></radialGradient>
- <filter id="glow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <linearGradient id="hull" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f1fdff"/><stop offset=".18" stop-color="#78f6ff"/><stop offset=".52" stop-color="#1977d9"/><stop offset="1" stop-color="#12234f"/></linearGradient>
+ <linearGradient id="wing" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#294c86"/><stop offset="1" stop-color="#08152f"/></linearGradient>
+ <linearGradient id="violet" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#69f7ff"/><stop offset="1" stop-color="#d65cff"/></linearGradient>
+ <radialGradient id="core"><stop stop-color="#fff"/><stop offset=".24" stop-color="#b9fbff"/><stop offset=".62" stop-color="#4be9ff"/><stop offset="1" stop-color="#087cae"/></radialGradient>
+ <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
 </defs>
+<ellipse cx="114" cy="128" rx="86" ry="58" fill="#03101f" opacity=".4"/>
 <g filter="url(#glow)">
- <path d="M226 128 90 43l25 63-75 22 75 22-25 63z" fill="url(#body)" stroke="url(#edge)" stroke-width="6" stroke-linejoin="round"/>
- <path d="M108 74 54 47l28 59 26-8zM108 182 54 209l28-59 26 8z" fill="#1b2b5c" stroke="#6cf4ff" stroke-width="4"/>
- <path d="m185 128-63-24v48z" fill="#101a35" opacity=".9"/>
- <circle cx="139" cy="128" r="24" fill="url(#core)" stroke="#fff" stroke-width="3"/>
- <circle cx="139" cy="128" r="7" fill="#fff"/>
- <path d="M82 117 35 128l47 11-18-11z" fill="#ff5fdd"/>
-</g></svg>
+ <path d="M232 128 151 83 72 72l27 39-68 17 68 17-27 39 79-11z" fill="url(#wing)" stroke="#5eeeff" stroke-width="4" stroke-linejoin="round"/>
+ <path d="M226 128 151 96 94 128l57 32z" fill="url(#hull)" stroke="#d9fbff" stroke-width="3" stroke-linejoin="round"/>
+ <path d="M164 105 214 128l-50 23-29-23z" fill="#071d38" opacity=".72"/>
+ <path d="M113 87 84 52 75 97 101 111zM113 169 84 204 75 159 101 145z" fill="#11284f" stroke="#688dca" stroke-width="3"/>
+ <path d="M93 116 42 128l51 12-19-12z" fill="url(#violet)"/>
+ <path d="M91 98 58 88l17 26M91 158l-33 10 17-26" fill="none" stroke="#d45dff" stroke-width="4" stroke-linecap="round"/>
+ <circle cx="143" cy="128" r="25" fill="#06233a" stroke="#66f3ff" stroke-width="4"/>
+ <circle cx="143" cy="128" r="16" fill="url(#core)"/>
+ <circle cx="143" cy="128" r="5" fill="#fff"/>
+ <path d="M171 113 199 128l-28 15 9-15z" fill="#e8feff" opacity=".9"/>
+ <path d="M102 128h22" stroke="#aefbff" stroke-width="4" stroke-linecap="round"/>
+</g>
+<path d="M70 111 27 128l43 17" fill="none" stroke="#4af4ff" stroke-width="4" opacity=".5" stroke-linecap="round"/>
+</svg>
