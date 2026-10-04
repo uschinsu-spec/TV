@@ -1035,7 +1035,7 @@ body.game-running{overflow:hidden}
 .html5-game-card[data-theme="adventure"] .html5-cover{background:linear-gradient(145deg,#285641,#172d27 56%,#243928)}
 .html5-game-card[data-theme="retro"] .html5-cover{background:linear-gradient(145deg,#7b3b31,#39243b 50%,#10253e)}
 .html5-game-card[data-theme="temple"] .html5-cover{background:linear-gradient(145deg,#78643d,#2f2b28 55%,#17232d)}
-.html5-game-card[data-theme="rpg"] .html5-cover{background:linear-gradient(145deg,#56382e,#25202c 55%,#162231)}
+.html5-game-card[data-theme="rpg"] .html5-cover{background:linear-gradient(145deg,#56382e,#25202c 55%,#162231)}\n.html5-game-card[data-theme="soccer"] .html5-cover{background:linear-gradient(145deg,#1d6d3b,#123b2a 54%,#0b2430)}
 .html5-info{
   min-height:0;
   display:flex;
