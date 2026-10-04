@@ -147,7 +147,8 @@ public class MainActivity extends Activity {
                 super.onPageStarted(view, url, favicon);
                 nativeTvFullscreen = false;
                 homeVisible = isHomeOrigin(url);
-                famobiRunnerVisible = isFamobiOmNomUrl(url);
+                if (homeVisible) famobiRunnerVisible = false;
+                else if (isFamobiOmNomUrl(url) || famobiRunnerVisible) famobiRunnerVisible = true;
                 if (gamepadStateBridge != null) gamepadStateBridge.setLowLatencyMode(false);
                 enterImmersiveMode();
             }
@@ -156,32 +157,16 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 homeVisible = isHomeOrigin(url);
-                famobiRunnerVisible = isFamobiOmNomUrl(url);
+                if (homeVisible) famobiRunnerVisible = false;
+                else if (isFamobiOmNomUrl(url) || famobiRunnerVisible) famobiRunnerVisible = true;
                 view.setVisibility(View.VISIBLE);
                 view.requestFocus(View.FOCUS_DOWN);
 
-                // Famobi's public launcher shows a visual PLAY splash that does not
-                // reliably accept Android TV Enter/gamepad input. Resolve its own
-                // official CDN game link and enter the real HTML5 game automatically.
-                if (famobiRunnerVisible && url != null && url.startsWith("https://play.famobi.com/")) {
-                    view.evaluateJavascript(
-                            "(function(){try{" +
-                            " function go(){" +
-                            "  var a=document.querySelector('a[href*=\"games.cdn.famobi.com\"][href*=\"om-nom-run\"]');" +
-                            "  if(a&&a.href){location.href=a.href;return true;}" +
-                            "  return false;" +
-                            " }" +
-                            " if(go())return;" +
-                            " var tries=0,t=setInterval(function(){tries++;if(go()||tries>80)clearInterval(t);},125);" +
-                            "}catch(e){}})();",
-                            null
-                    );
-                }
 
                 view.evaluateJavascript(
                         "(function(){try{" +
                         "window.__TV_NATIVE_GAMEPAD__=true;" +
-                        "window.__TV_NATIVE_APP_VERSION__='2.4';window.__TV_NATIVE_LOW_LATENCY__=true;window.__TV_NATIVE_ULTRA_60HZ__=true;window.__TV_NATIVE_LOCK_FREE_INPUT__=true;" +
+                        "window.__TV_NATIVE_APP_VERSION__='2.5';window.__TV_NATIVE_LOW_LATENCY__=true;window.__TV_NATIVE_ULTRA_60HZ__=true;window.__TV_NATIVE_LOCK_FREE_INPUT__=true;" +
                         "document.documentElement.setAttribute('tabindex','-1');" +
                         "document.documentElement.focus();" +
 
@@ -282,6 +267,85 @@ public class MainActivity extends Activity {
 
     private boolean isFamobiOmNomUrl(String url) {
         return url != null && url.contains("famobi.com") && url.contains("om-nom-run");
+    }
+
+    private boolean isFamobiActivateKey(int keyCode) {
+        return keyCode == KeyEvent.KEYCODE_BUTTON_A ||
+                keyCode == KeyEvent.KEYCODE_DPAD_CENTER ||
+                keyCode == KeyEvent.KEYCODE_ENTER ||
+                keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER ||
+                keyCode == KeyEvent.KEYCODE_SPACE ||
+                keyCode == KeyEvent.KEYCODE_BUTTON_START;
+    }
+
+    private void returnFromFamobiToHub() {
+        famobiRunnerVisible = false;
+        if (gamepadStateBridge != null) gamepadStateBridge.setLowLatencyMode(false);
+        if (webView != null) {
+            webView.stopLoading();
+            webView.loadUrl(HOME_URL);
+        }
+    }
+
+    private void tapFamobiPlay() {
+        if (webView == null) return;
+
+        // First try the launcher's own DOM element. If it is rendered as canvas/image,
+        // fall back to a native WebView tap near the visual centre.
+        webView.evaluateJavascript(
+                "(function(){try{" +
+                " var sels=['button','a','[role=button]','[onclick]','[class*=play]','[id*=play]'];" +
+                " var all=[];for(var s of sels){try{all=all.concat(Array.from(document.querySelectorAll(s)));}catch(e){}}" +
+                " var best=null,score=-1;" +
+                " for(var el of all){var r=el.getBoundingClientRect();if(r.width<28||r.height<28)continue;" +
+                "  var st=getComputedStyle(el);if(st.display==='none'||st.visibility==='hidden'||+st.opacity===0)continue;" +
+                "  var txt=((el.innerText||'')+' '+(el.getAttribute('aria-label')||'')+' '+(el.getAttribute('title')||'')+' '+(el.className||'')+' '+(el.id||'')).toLowerCase();" +
+                "  var sc=(/play|start|launch/.test(txt)?1000000:0)+(r.width*r.height)-Math.abs((r.left+r.width/2)-innerWidth/2)*20-Math.abs((r.top+r.height/2)-innerHeight/2)*20;" +
+                "  if(sc>score){score=sc;best=el;}" +
+                " }" +
+                " if(best){var r=best.getBoundingClientRect();try{best.focus();}catch(e){};try{best.click();}catch(e){};" +
+                "  return JSON.stringify({x:r.left+r.width/2,y:r.top+r.height/2,w:innerWidth,h:innerHeight});}" +
+                " var x=innerWidth/2,y=innerHeight/2,el=document.elementFromPoint(x,y);if(el){try{el.click();}catch(e){}};" +
+                " return JSON.stringify({x:x,y:y,w:innerWidth,h:innerHeight});" +
+                "}catch(e){return '';}})();",
+                value -> {
+                    runOnUiThread(() -> {
+                        if (webView == null) return;
+                        float x = webView.getWidth() * 0.5f;
+                        float y = webView.getHeight() * 0.5f;
+                        try {
+                            String raw = value == null ? "" : value.replace("\\", "").replace("\"", """);
+                            int xi = raw.indexOf("\"x\":");
+                            int yi = raw.indexOf(",\"y\":");
+                            int wi = raw.indexOf(",\"w\":");
+                            int hi = raw.indexOf(",\"h\":");
+                            if (xi >= 0 && yi > xi && wi > yi && hi > wi) {
+                                float cssX = Float.parseFloat(raw.substring(xi + 4, yi));
+                                float cssY = Float.parseFloat(raw.substring(yi + 5, wi));
+                                float cssW = Float.parseFloat(raw.substring(wi + 5, hi));
+                                int end = raw.indexOf('}', hi);
+                                float cssH = Float.parseFloat(raw.substring(hi + 5, end > hi ? end : raw.length()));
+                                if (cssW > 0 && cssH > 0) {
+                                    x = cssX * webView.getWidth() / cssW;
+                                    y = cssY * webView.getHeight() / cssH;
+                                }
+                            }
+                        } catch (Exception ignored) {
+                        }
+
+                        long t = SystemClock.uptimeMillis();
+                        MotionEvent down = MotionEvent.obtain(t, t, MotionEvent.ACTION_DOWN, x, y, 0);
+                        MotionEvent up = MotionEvent.obtain(t, t + 55L, MotionEvent.ACTION_UP, x, y, 0);
+                        try {
+                            webView.dispatchTouchEvent(down);
+                            webView.dispatchTouchEvent(up);
+                        } finally {
+                            down.recycle();
+                            up.recycle();
+                        }
+                    });
+                }
+        );
     }
 
     private void prefer60HzDisplayMode() {
@@ -723,12 +787,20 @@ public class MainActivity extends Activity {
             return true;
         }
 
-        // In the hosted Famobi runner, B keeps the TV convention: go back to the Hub.
-        if (famobiRunnerVisible &&
-                event.getAction() == KeyEvent.ACTION_DOWN &&
-                keyCode == KeyEvent.KEYCODE_BUTTON_B) {
-            if (webView != null && webView.canGoBack()) webView.goBack();
-            return true;
+        // External GAME 04 safety controls. Back/B must always escape to the Hub,
+        // regardless of redirects/history. A/OK/Enter activates the Famobi PLAY splash
+        // using both a DOM click and a native WebView tap.
+        if (famobiRunnerVisible) {
+            if (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_BUTTON_B) {
+                if (event.getAction() == KeyEvent.ACTION_DOWN) returnFromFamobiToHub();
+                return true;
+            }
+            if (isFamobiActivateKey(keyCode)) {
+                if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
+                    tapFamobiPlay();
+                }
+                return true;
+            }
         }
 
         // GAME-only ultra-low-latency path: write native bit state directly.
