@@ -61,7 +61,7 @@ function startOmNomRun(){
   activeGame='';
   window.tvGameActive=false;
   window.TVInput?.setGameMode?.(false);
-  window.location.href='https://play.famobi.com/om-nom-run';
+  window.location.href='https://play.famobi.com/wrapper/om-nom-run/A1000-10';
 }
 
 window.renderGameApp=renderMenu;
