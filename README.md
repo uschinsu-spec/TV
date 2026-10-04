@@ -27,8 +27,9 @@ APK artifact: `TVUtility-AndroidTV-v1.7.apk`
 
 
 ## Game Center HTML5
+- **Friend Soccer** hỗ trợ gamepad: bóng đá 11v11, AI lấp vị trí trống, chơi solo hoặc multiplayer.
 - Đã bỏ toàn bộ mini-game canvas cũ: Snake, Pong, Breakout, Space Shooter, Car Dodge, Flappy, Asteroids, Catch Coins, 2048 và Reaction.
 - Thay bằng thư viện game HTML5 chính chủ, chơi trực tiếp trong WebView, không cần cài game riêng.
-- Danh sách hiện tại: High On Track, Vampire Survivors, Vapor Trails, Fohh, Turbo OutRun Reimagined, Nymphiad, Virtuous Vanquisher of Evil.
+- Danh sách hiện tại: Friend Soccer, High On Track, Vampire Survivors, Vapor Trails, Fohh, Turbo OutRun Reimagined, Nymphiad, Virtuous Vanquisher of Evil.
 - Game Center dùng lưới 4×2 cho TV, focus lớn và ưu tiên F710/remote.
 - Khi mở game bên ngoài TV Home, Android WebView trả input gamepad trực tiếp cho game; Remote Back quay lại lịch sử và TV Home tự mở lại Game Center.
