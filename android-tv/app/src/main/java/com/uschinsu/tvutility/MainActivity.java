@@ -42,6 +42,7 @@ public class MainActivity extends Activity {
     private boolean hasLastAxes = false;
     private boolean nativeTvFullscreen = false;
     private boolean homeVisible = false;
+    private boolean famobiRunnerVisible = false;
     private GamepadStateBridge gamepadStateBridge;
     private float lastLx, lastLy, lastRx, lastRy, lastHatX, lastHatY, lastLt, lastRt;
 
@@ -146,6 +147,7 @@ public class MainActivity extends Activity {
                 super.onPageStarted(view, url, favicon);
                 nativeTvFullscreen = false;
                 homeVisible = isHomeOrigin(url);
+                famobiRunnerVisible = isFamobiOmNomUrl(url);
                 if (gamepadStateBridge != null) gamepadStateBridge.setLowLatencyMode(false);
                 enterImmersiveMode();
             }
@@ -154,6 +156,7 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 homeVisible = isHomeOrigin(url);
+                famobiRunnerVisible = isFamobiOmNomUrl(url);
                 view.setVisibility(View.VISIBLE);
                 view.requestFocus(View.FOCUS_DOWN);
                 view.evaluateJavascript(
@@ -256,6 +259,10 @@ public class MainActivity extends Activity {
 
     private boolean isHomeVisible() {
         return webView != null && homeVisible;
+    }
+
+    private boolean isFamobiOmNomUrl(String url) {
+        return url != null && url.contains("famobi.com") && url.contains("om-nom-run");
     }
 
     private void prefer60HzDisplayMode() {
@@ -697,6 +704,14 @@ public class MainActivity extends Activity {
             return true;
         }
 
+        // In the hosted Famobi runner, B keeps the TV convention: go back to the Hub.
+        if (famobiRunnerVisible &&
+                event.getAction() == KeyEvent.ACTION_DOWN &&
+                keyCode == KeyEvent.KEYCODE_BUTTON_B) {
+            if (webView != null && webView.canGoBack()) webView.goBack();
+            return true;
+        }
+
         // GAME-only ultra-low-latency path: write native bit state directly.
         // No String mapping and no evaluateJavascript queue on gameplay input.
         if (isHomeVisible() &&
@@ -718,7 +733,9 @@ public class MainActivity extends Activity {
         // Keep the F710/native gamepad path that already works outside active gameplay.
         if (isGameControllerSource(event.getSource())) {
             emitInputButton(event, false);
-            if (isHomeVisible()) {
+            // Om Nom Run uses Arrow keys. Consume the original Android gamepad event
+            // after our DOM-key bridge so one stick/D-pad action cannot fire twice.
+            if (isHomeVisible() || famobiRunnerVisible) {
                 return true;
             }
         }
@@ -753,7 +770,7 @@ public class MainActivity extends Activity {
                 }
             }
             emitGamepadAxes(event);
-            if (isHomeVisible()) {
+            if (isHomeVisible() || famobiRunnerVisible) {
                 return true;
             }
         }
