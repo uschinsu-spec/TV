@@ -161,22 +161,57 @@ function browserSnapshot(gp){
     device:gp.id||'Gamepad',source:'browser'
   };
 }
+const directState={
+  x:0,y:0,rx:0,ry:0,lt:0,rt:0,
+  a:false,b:false,start:false,select:false,
+  up:false,down:false,left:false,right:false,
+  xButton:false,yButton:false,l1:false,r1:false,l2:false,r2:false,
+  device:'',source:'native-direct'
+};
+function fillPackedState(raw){
+  const v=raw.split('|');
+  if(v.length<9)return null;
+  const lx=+v[0]||0,ly=+v[1]||0,rx=+v[2]||0,ry=+v[3]||0;
+  const hx=+v[4]||0,hy=+v[5]||0,lt=+v[6]||0,rt=+v[7]||0,mask=+v[8]||0;
+  directState.x=Math.abs(hx)>=Math.abs(lx)?hx:lx;
+  directState.y=Math.abs(hy)>=Math.abs(ly)?hy:ly;
+  directState.rx=rx;directState.ry=ry;directState.lt=lt;directState.rt=rt;
+  directState.a=!!(mask&1)||!!(mask&65536);
+  directState.b=!!(mask&2);
+  directState.xButton=!!(mask&4);directState.yButton=!!(mask&8);
+  directState.l1=!!(mask&16);directState.r1=!!(mask&32);
+  directState.l2=!!(mask&64);directState.r2=!!(mask&128);
+  directState.select=!!(mask&256);directState.start=!!(mask&512);
+  directState.up=!!(mask&4096);directState.down=!!(mask&8192);
+  directState.left=!!(mask&16384);directState.right=!!(mask&32768);
+  directState.device=window.__lastTVGamepadDevice||'Native Gamepad';
+  directState.source='native-packed';
+  return directState;
+}
 function directNativeSnapshot(){
-  if(!gameMode||!window.TVNativeInput?.readState)return null;
+  if(!gameMode||!window.TVNativeInput)return null;
   try{
+    if(typeof window.TVNativeInput.readPacked==='function'){
+      const packed=window.TVNativeInput.readPacked();
+      if(packed)return fillPackedState(packed);
+    }
+    if(typeof window.TVNativeInput.readState!=='function')return null;
     const raw=window.TVNativeInput.readState();
     if(!raw)return null;
     const d=JSON.parse(raw);
-    return {
-      x:Math.abs(Number(d.hatX)||0)>=Math.abs(Number(d.lx)||0)?Number(d.hatX)||0:Number(d.lx)||0,
-      y:Math.abs(Number(d.hatY)||0)>=Math.abs(Number(d.ly)||0)?Number(d.hatY)||0:Number(d.ly)||0,
-      rx:Number(d.rx)||0,ry:Number(d.ry)||0,lt:Number(d.lt)||0,rt:Number(d.rt)||0,
-      a:!!d.a||!!d.dpadCenter,b:!!d.b,start:!!d.start,select:!!d.select,
-      up:!!d.up,down:!!d.down,left:!!d.left,right:!!d.right,
-      xButton:!!d.xButton,yButton:!!d.yButton,l1:!!d.l1,r1:!!d.r1,l2:!!d.l2,r2:!!d.r2,
-      device:d.device||window.__lastTVGamepadDevice||'Native Gamepad',
-      source:'native-direct'
-    };
+    const lx=Number(d.lx)||0,ly=Number(d.ly)||0,hx=Number(d.hatX)||0,hy=Number(d.hatY)||0;
+    directState.x=Math.abs(hx)>=Math.abs(lx)?hx:lx;
+    directState.y=Math.abs(hy)>=Math.abs(ly)?hy:ly;
+    directState.rx=Number(d.rx)||0;directState.ry=Number(d.ry)||0;
+    directState.lt=Number(d.lt)||0;directState.rt=Number(d.rt)||0;
+    directState.a=!!d.a||!!d.dpadCenter;directState.b=!!d.b;
+    directState.start=!!d.start;directState.select=!!d.select;
+    directState.up=!!d.up;directState.down=!!d.down;directState.left=!!d.left;directState.right=!!d.right;
+    directState.xButton=!!d.xButton;directState.yButton=!!d.yButton;
+    directState.l1=!!d.l1;directState.r1=!!d.r1;directState.l2=!!d.l2;directState.r2=!!d.r2;
+    directState.device=d.device||window.__lastTVGamepadDevice||'Native Gamepad';
+    directState.source='native-direct';
+    return directState;
   }catch(e){return null}
 }
 
