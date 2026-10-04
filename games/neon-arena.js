@@ -3,8 +3,8 @@
 
 window.CustomTVGames=window.CustomTVGames||{};
 
-const W=1280,H=720,UPDATE_FPS=60,RENDER_FPS=30,UPDATE_FRAME=1000/UPDATE_FPS,RENDER_FRAME=1000/RENDER_FPS;
-let canvas=null,ctx=null,raf=0,lastUpdate=0,lastRender=0,lastTick=0,running=false,paused=false;
+const W=1280,H=720,MAX_FRAME_DT=.05,INPUT_DEADZONE_NATIVE=.045,INPUT_DEADZONE_BROWSER=.10,AIM_DEADZONE=.12;
+let canvas=null,ctx=null,raf=0,lastFrame=0,running=false,paused=false;
 let state=null,onExit=null;
 const keys=new Set(),pressed=new Set();
 let padPrev={};
@@ -19,23 +19,43 @@ const ASSET_URLS={
   arena:'./assets/game01/neon-arena/arena-bg.svg'
 };
 const assets=Object.create(null);
+const raster=Object.create(null);
 let assetsRequested=false;
+let hudEls=null;
+const hudCache={score:null,wave:null,bombs:null,hp:null};
 
+function rasterizeAsset(key,img){
+  try{
+    const w=img.naturalWidth||256,h=img.naturalHeight||256;
+    const c=document.createElement('canvas');
+    c.width=w;c.height=h;
+    const g=c.getContext('2d',{alpha:key!=='arena'});
+    if(!g)return;
+    g.imageSmoothingEnabled=true;
+    g.drawImage(img,0,0,w,h);
+    raster[key]=c;
+  }catch(e){}
+}
 function preloadAssets(){
   if(assetsRequested)return;
   assetsRequested=true;
   for(const [key,url] of Object.entries(ASSET_URLS)){
     const img=new Image();
     img.decoding='async';
+    img.onload=()=>rasterizeAsset(key,img);
     img.src=url;
     assets[key]=img;
   }
 }
-function ready(key){const a=assets[key];return !!(a&&a.complete&&a.naturalWidth)}
+function ready(key){
+  const a=assets[key];
+  return !!(raster[key]||(a&&a.complete&&a.naturalWidth));
+}
+function assetSource(key){return raster[key]||assets[key]}
 function sprite(key,x,y,w,h,rot=0,alpha=1){
   if(!ready(key))return false;
   ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.globalAlpha=alpha;
-  ctx.drawImage(assets[key],-w/2,-h/2,w,h);
+  ctx.drawImage(assetSource(key),-w/2,-h/2,w,h);
   ctx.restore();ctx.globalAlpha=1;return true;
 }
 
@@ -49,8 +69,10 @@ function edge(now,cur,key){return !!cur[key]&&!padPrev[key]}
 function readInput(){
   const p=window.TVInput?.readGamepadState?.()||{};
   const left=(p.left?1:0),right=(p.right?1:0),up=(p.up?1:0),down=(p.down?1:0);
-  let x=Math.abs(Number(p.x)||0)>.16?Number(p.x):right-left;
-  let y=Math.abs(Number(p.y)||0)>.16?Number(p.y):down-up;
+  const rawX=Number(p.x)||0,rawY=Number(p.y)||0;
+  const deadzone=window.TVInput?.native?INPUT_DEADZONE_NATIVE:INPUT_DEADZONE_BROWSER;
+  let x=Math.abs(rawX)>deadzone?rawX:right-left;
+  let y=Math.abs(rawY)>deadzone?rawY:down-up;
   if(keys.has('ArrowLeft'))x=-1;
   if(keys.has('ArrowRight'))x=1;
   if(keys.has('ArrowUp'))y=-1;
@@ -63,7 +85,7 @@ function readInput(){
     start:!!p.start||keys.has('p'),
     xButton:!!p.xButton||keys.has('x'),
     yButton:!!p.yButton||keys.has('y'),
-    r2:!!p.r2||(Number(p.rt)||0)>.45,
+    r2:!!p.r2||(Number(p.rt)||0)>.18,
     x,y,
     rx:Number(p.rx)||0,
     ry:Number(p.ry)||0
@@ -162,7 +184,7 @@ function update(dt,input){
   p.y=clamp(p.y+input.y*p.speed*dt,24,H-24);
 
   const aimMag=Math.hypot(input.rx,input.ry);
-  if(aimMag>.24){p.aimX=input.rx/aimMag;p.aimY=input.ry/aimMag}
+  if(aimMag>AIM_DEADZONE){p.aimX=input.rx/aimMag;p.aimY=input.ry/aimMag}
   else if(Math.hypot(input.x,input.y)>.18){p.aimX=input.x;p.aimY=input.y}
 
   if(input.a||input.r2)shoot(p);
@@ -231,7 +253,7 @@ function draw(){
   const s=state.shake,ox=s?rand(-s,s):0,oy=s?rand(-s,s):0;
   ctx.save();ctx.translate(ox,oy);
 
-  if(ready('arena'))ctx.drawImage(assets.arena,-20,-20,W+40,H+40);
+  if(ready('arena'))ctx.drawImage(assetSource('arena'),-20,-20,W+40,H+40);
   else{
     const grad=ctx.createLinearGradient(0,0,0,H);
     grad.addColorStop(0,'#07101e');grad.addColorStop(1,'#02060c');
@@ -319,36 +341,38 @@ function drawOverlay(title,sub){
 }
 
 function updateHud(){
-  if(!state)return;
+  if(!state||!hudEls)return;
   const p=state.player;
-  const score=document.getElementById('naScore'),wave=document.getElementById('naWave'),bombs=document.getElementById('naBombs'),hp=document.getElementById('naHpFill');
-  if(score)score.textContent=String(Math.floor(state.score)).padStart(6,'0');
-  if(wave)wave.textContent='WAVE '+state.wave;
-  if(bombs)bombs.textContent='Y BOM '+p.bombs;
-  if(hp)hp.style.width=Math.max(0,p.hp/p.maxHp*100)+'%';
+  const score=String(Math.floor(state.score)).padStart(6,'0');
+  const wave='WAVE '+state.wave;
+  const bombs='Y BOM '+p.bombs;
+  const hp=Math.round(Math.max(0,p.hp/p.maxHp*100)*10)/10;
+  if(score!==hudCache.score){hudCache.score=score;if(hudEls.score)hudEls.score.textContent=score}
+  if(wave!==hudCache.wave){hudCache.wave=wave;if(hudEls.wave)hudEls.wave.textContent=wave}
+  if(bombs!==hudCache.bombs){hudCache.bombs=bombs;if(hudEls.bombs)hudEls.bombs.textContent=bombs}
+  if(hp!==hudCache.hp){hudCache.hp=hp;if(hudEls.hp)hudEls.hp.style.width=hp+'%'}
 }
 
 function frame(t){
   if(!running)return;
   raf=requestAnimationFrame(frame);
 
-  if(t-lastUpdate>=UPDATE_FRAME){
-    const dt=Math.min(.04,(t-(lastTick||t))/1000||1/UPDATE_FPS);
-    lastUpdate=t;lastTick=t;
-    const input=readInput();
-    if(input.bEdge){stop();onExit?.();return}
-    if(state?.over){
-      if(input.aEdge)reset();
-    }else{
-      if(input.startEdge)paused=!paused;
-      if(!paused)update(dt,input);
-    }
+  const dt=lastFrame?Math.min(MAX_FRAME_DT,Math.max(.001,(t-lastFrame)/1000)):1/60;
+  lastFrame=t;
+
+  // Read the controller on every display frame. No 30 FPS throttle and no
+  // evaluateJavascript path while the Android app's native GAME mode is active.
+  const input=readInput();
+  if(input.bEdge){stop();onExit?.();return}
+  if(state?.over){
+    if(input.aEdge)reset();
+  }else{
+    if(input.startEdge)paused=!paused;
+    if(!paused)update(dt,input);
   }
 
-  if(t-lastRender>=RENDER_FRAME){
-    lastRender=t;
-    draw();
-  }
+  // Render on every requestAnimationFrame. On a 60 Hz TV this is true 60 FPS.
+  draw();
 }
 
 function keyDown(e){
@@ -373,15 +397,22 @@ function start(opts={}){
     '</div>'+
     '<div class="na-stage"><canvas id="naCanvas" width="1280" height="720"></canvas></div>'+
   '</div>';
-  canvas=document.getElementById('naCanvas');ctx=canvas?.getContext('2d',{alpha:false});
+  canvas=document.getElementById('naCanvas');ctx=canvas?.getContext('2d',{alpha:false,desynchronized:true});
   if(!ctx)return;
+  hudEls={
+    score:document.getElementById('naScore'),
+    wave:document.getElementById('naWave'),
+    bombs:document.getElementById('naBombs'),
+    hp:document.getElementById('naHpFill')
+  };
+  hudCache.score=hudCache.wave=hudCache.bombs=hudCache.hp=null;
   preloadAssets();
   ctx.imageSmoothingEnabled=true;
-  ctx.imageSmoothingQuality='high';
+  ctx.imageSmoothingQuality='medium';
   document.body.classList.add('game-running');
   document.getElementById('appPanel')?.classList.add('game-running','custom-game-running');
   window.tvGameActive=true;window.TVInput?.setGameMode?.(true);
-  reset();running=true;lastUpdate=0;lastRender=0;lastTick=0;
+  reset();running=true;lastFrame=0;
   document.addEventListener('keydown',keyDown,true);document.addEventListener('keyup',keyUp,true);
   window.requestTVFullscreen?.();
   raf=requestAnimationFrame(frame);
@@ -394,7 +425,7 @@ function stop(){
   document.getElementById('appPanel')?.classList.remove('game-running','custom-game-running');
   window.tvGameActive=false;
   window.TVInput?.setGameMode?.(false);
-  canvas=null;ctx=null;state=null;paused=false;
+  canvas=null;ctx=null;state=null;hudEls=null;paused=false;lastFrame=0;
 }
 
 window.CustomTVGames.neonArena={start,stop};
