@@ -29,10 +29,17 @@ function renderMenu(){
           '<em>Lang bạt trong đại lâm, diệt yêu thú và đạo phỉ, hấp thu linh khí để đột phá cảnh giới. Mỗi lần lên cấp chọn 1/3 công pháp; nhặt Linh Thạch, đan dược và trang bị để nâng Kiếm, Giáp, Ngọc. Có elite và Yêu Vương.</em>'+
           '<b>A / OK · CHƠI</b></span>'+
         '</button>'+
+        '<button id="launchOmNomRun" class="custom-game-card focusable game04-card">'+
+          '<span class="custom-game-art"><span class="omnom-mark" aria-hidden="true">OM<br>NOM<br><b>RUN</b></span><span class="custom-game-number">GAME 04</span><span class="custom-game-tag">FAMOBI · ENDLESS RUNNER</span></span>'+
+          '<span class="custom-game-copy"><strong>OM NOM RUN</strong><span>3-Lane Runner · Missions · Power-ups</span>'+
+          '<em>Bản web chính chủ Famobi. F710/D-pad: trái-phải đổi làn, lên nhảy, xuống trượt. Không sao chép mã nguồn hay asset vào repo; game được tải trực tiếp từ Famobi.</em>'+
+          '<b>A / OK · MỞ GAME</b></span>'+
+        '</button>'+
       '</div>'+
     '</div>';
   $('launchNeonArena')?.addEventListener('click',startNeonArena);
   $('launchCultivationForest')?.addEventListener('click',startCultivationForest);
+  $('launchOmNomRun')?.addEventListener('click',startOmNomRun);
   setTimeout(()=>$('launchNeonArena')?.focus(),40);
 }
 
@@ -48,6 +55,13 @@ function startCultivationForest(){
   if(!game)return window.showToast?.('Không tải được GAME 02');
   activeGame='cultivation-forest';
   game.start({root:$('panelBody'),onExit:renderMenu});
+}
+
+function startOmNomRun(){
+  activeGame='';
+  window.tvGameActive=false;
+  window.TVInput?.setGameMode?.(false);
+  window.location.href='https://play.famobi.com/om-nom-run';
 }
 
 window.renderGameApp=renderMenu;
