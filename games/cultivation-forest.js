@@ -37,13 +37,23 @@ function rand(a,b){return a+Math.random()*(b-a)}
 function dist2(ax,ay,bx,by){const x=ax-bx,y=ay-by;return x*x+y*y}
 function compact(arr,keep){let w=0;for(let r=0;r<arr.length;r++){const v=arr[r];if(keep(v))arr[w++]=v}arr.length=w}
 function edge(cur,key){return !!cur[key]&&!prev[key]}
+function realmTier(level){
+  if(level<10)return 0;
+  if(level<25)return 1;
+  if(level<40)return 2;
+  if(level<58)return 3;
+  return 4;
+}
 function realm(level){
   if(level<10)return 'Luyện Khí · Tầng '+level;
   if(level<15)return 'Trúc Cơ · Sơ Kỳ';
   if(level<20)return 'Trúc Cơ · Trung Kỳ';
   if(level<25)return 'Trúc Cơ · Hậu Kỳ';
   if(level<32)return 'Kim Đan · Sơ Kỳ';
-  return 'Kim Đan · Trung Kỳ';
+  if(level<40)return 'Kim Đan · Hậu Kỳ';
+  if(level<49)return 'Nguyên Anh · Sơ Kỳ';
+  if(level<58)return 'Nguyên Anh · Hậu Kỳ';
+  return 'Hóa Thần · Sơ Kỳ';
 }
 function xpNeed(level){return Math.floor(42+level*22+level*level*2.4)}
 
@@ -73,11 +83,12 @@ function drawSprite(k,x,y,w,h,rot=0,alpha=1){
 
 function reset(){
   const meta=loadMeta();
+  const legacy=Math.min(.22,Math.floor((meta.spirit||0)/25)*.01);
   state={
     t:0,mode:'play',score:0,kills:0,level:1,xp:0,xpNeed:xpNeed(1),wave:1,
-    spawn:.3,eliteTimer:35,bossTier:0,shake:0,flash:0,message:'',messageT:0,
+    spawn:.3,eliteTimer:35,bossTier:0,shake:0,flash:0,message:legacy>0?'Linh căn tích lũy +'+Math.round(legacy*100)+'%':'',messageT:legacy>0?2.2:0,
     cam:{x:WORLD_W/2-W/2,y:WORLD_H/2-H/2},
-    player:{x:WORLD_W/2,y:WORLD_H/2,r:22,hp:180,maxHp:180,speed:270,damage:32,attackCd:0,attackRate:.44,range:175,pickup:105,crit:.06,targets:1,dashCd:0,dashMax:1.05,inv:0,guard:0,bombs:2,spirit:meta.spirit||0,
+    player:{x:WORLD_W/2,y:WORLD_H/2,r:22,hp:180*(1+legacy),maxHp:180*(1+legacy),speed:270*(1+legacy*.25),damage:32*(1+legacy),attackCd:0,attackRate:.44,range:175,pickup:105,crit:.06+legacy*.08,targets:1,dashCd:0,dashMax:1.05,inv:0,guard:0,bombs:2,spirit:meta.spirit||0,
       swordLv:1,armorLv:1,jadeLv:1,up:{blade:0,body:0,step:0,gather:0,sword:0,thunder:0,guard:0,crit:0},thunderCd:3.2},
     enemies:[],drops:[],particles:[],slashes:[],damageText:[],choices:[],choice:0,
     mapDots:[]
@@ -91,7 +102,9 @@ function saveMeta(){
     localStorage.setItem('tv-game02-meta',JSON.stringify({
       spirit:state.player.spirit,
       bestLevel:Math.max(old.bestLevel||0,state.level),
-      bestKills:Math.max(old.bestKills||0,state.kills)
+      bestKills:Math.max(old.bestKills||0,state.kills),
+      bestLevel:Math.max(old.bestLevel||0,state.level),
+      bestRealm:realm(Math.max(old.bestLevel||0,state.level))
     }));
   }catch(e){}
 }
@@ -196,7 +209,7 @@ function killEnemy(e){
   if(e.dead)return;e.dead=true;state.kills++;state.score+=Math.round(e.value*(1+state.level*.08));
   dropAt(e.x,e.y,'qi',e.xp);
   const roll=Math.random();
-  if(e.boss){dropAt(e.x+30,e.y,'gear',3);dropAt(e.x-30,e.y,'spirit',8);dropAt(e.x,e.y+35,'gourd',1);state.player.spirit+=5;showMessage('HẠ YÊU VƯƠNG · NHẬN LINH THẠCH',2)}
+  if(e.boss){dropAt(e.x+30,e.y,'gear',Math.min(4,2+state.bossTier));dropAt(e.x-30,e.y,'spirit',8+state.bossTier*2);dropAt(e.x,e.y+35,'gourd',1);state.player.spirit+=5;showMessage('HẠ YÊU VƯƠNG · NHẬN LINH THẠCH',2)}
   else if(e.elite&&roll<.7)dropAt(e.x,e.y,'gear',2);
   else if(roll<.05)dropAt(e.x,e.y,'gourd',1);
   else if(roll<.095)dropAt(e.x,e.y,'spirit',1);
@@ -213,7 +226,17 @@ function showMessage(s,t=1.2){state.message=s;state.messageT=t}
 function gainXp(v){
   state.xp+=v;
   if(state.xp>=state.xpNeed&&state.mode==='play'){
-    state.xp-=state.xpNeed;state.level++;state.xpNeed=xpNeed(state.level);state.player.hp=Math.min(state.player.maxHp,state.player.hp+state.player.maxHp*.12);
+    const oldTier=realmTier(state.level);
+    state.xp-=state.xpNeed;state.level++;state.xpNeed=xpNeed(state.level);
+    const p=state.player;
+    p.hp=Math.min(p.maxHp,p.hp+p.maxHp*.12);
+    const newTier=realmTier(state.level);
+    if(newTier>oldTier){
+      p.maxHp*=1.15;p.hp=p.maxHp;p.damage*=1.12;p.speed*=1.04;p.bombs=Math.min(5,p.bombs+1);
+      p.spirit+=5+newTier*3;
+      showMessage('ĐỘT PHÁ · '+realm(state.level),2.3);
+      state.flash=.2;state.shake=10;burst(p.x,p.y,34,'#ffe886');
+    }
     if(state.level%5===0)spawnBoss();
     openLevelUp();
   }
@@ -239,11 +262,14 @@ function applyUpgrade(u){
   }
   showMessage(u.name+' · Lv.'+p.up[u.id],1.4);state.mode='play';
 }
+function gearRank(power){
+  return power>=4?'Địa':power===3?'Huyền':power===2?'Hoàng':'Phàm';
+}
 function gearDrop(power){
-  const p=state.player,r=Math.random();
-  if(r<.4){p.swordLv+=power;p.damage*=1+.05*power;showMessage('Thanh Phong Kiếm +'+p.swordLv,1.5)}
-  else if(r<.75){p.armorLv+=power;p.maxHp+=22*power;p.hp+=22*power;showMessage('Huyền Thiết Giáp +'+p.armorLv,1.5)}
-  else{p.jadeLv+=power;p.crit=Math.min(.5,p.crit+.018*power);p.pickup+=10*power;showMessage('Tụ Linh Ngọc +'+p.jadeLv,1.5)}
+  const p=state.player,r=Math.random(),rank=gearRank(power);
+  if(r<.4){p.swordLv+=power;p.damage*=1+.05*power;showMessage(rank+' phẩm · Thanh Phong Kiếm +'+p.swordLv,1.6)}
+  else if(r<.75){p.armorLv+=power;p.maxHp+=22*power;p.hp+=22*power;showMessage(rank+' phẩm · Huyền Thiết Giáp +'+p.armorLv,1.6)}
+  else{p.jadeLv+=power;p.crit=Math.min(.5,p.crit+.018*power);p.pickup+=10*power;showMessage(rank+' phẩm · Tụ Linh Ngọc +'+p.jadeLv,1.6)}
 }
 function collectDrop(d){
   const p=state.player;
@@ -344,6 +370,11 @@ function draw(){
   }
   ctx.globalAlpha=1;
   const p=state.player,aim=Math.hypot(input.rx,input.ry)>.07?Math.atan2(input.ry,input.rx):Math.atan2(input.y||0,input.x||1);
+  const px=p.x-state.cam.x,py=p.y-state.cam.y,tier=realmTier(state.level);
+  if(tier>0){
+    ctx.save();ctx.globalAlpha=.16+.03*tier;ctx.strokeStyle=tier>=3?'#ffd96a':'#8fffd0';ctx.lineWidth=3+tier;
+    ctx.beginPath();ctx.arc(px,py,42+tier*8+Math.sin(state.t*3)*4,0,6.283);ctx.stroke();ctx.restore();
+  }
   if(p.inv<=0||Math.floor(state.t*18)%2===0)drawSprite('player',p.x,p.y,84,84,aim,1);
   for(const d of state.damageText){
     ctx.globalAlpha=clamp(d.t/.65,0,1);ctx.fillStyle=d.crit?'#ffe36d':'#d9f8ff';ctx.font=d.crit?'900 22px Arial':'800 17px Arial';ctx.textAlign='center';ctx.fillText(d.text,d.x-state.cam.x,d.y-state.cam.y);
@@ -372,8 +403,19 @@ function drawHud(){
   ctx.fillStyle='rgba(4,10,8,.72)';roundRect(18,H-52,840,34,14);ctx.fill();
   ctx.fillStyle='#c9d7cf';ctx.font='800 12px Arial';ctx.fillText('L Di chuyển  ·  R Ưu tiên hướng đánh  ·  A/R2 Tăng nhịp kiếm  ·  X Dash  ·  Y Linh Bạo  ·  START Tạm dừng  ·  B Thoát',32,H-30);
   if(state.messageT>0){ctx.textAlign='center';ctx.font='900 28px Arial';ctx.fillStyle='#ffe58d';ctx.fillText(state.message,W/2,135);ctx.textAlign='left'}
+  drawBossBar();
   drawMinimap();
   ctx.restore();
+}
+function drawBossBar(){
+  let boss=null;
+  for(const e of state.enemies){if(e.boss&&!e.dead){boss=e;break}}
+  if(!boss)return;
+  const w=520,x=(W-w)/2,y=22,pct=clamp(boss.hp/boss.maxHp,0,1);
+  ctx.fillStyle='rgba(25,7,7,.86)';roundRect(x,y,w,34,14);ctx.fill();
+  ctx.fillStyle='#4a1719';ctx.fillRect(x+8,y+18,w-16,9);
+  ctx.fillStyle='#e6534f';ctx.fillRect(x+8,y+18,(w-16)*pct,9);
+  ctx.textAlign='center';ctx.fillStyle='#ffe3a1';ctx.font='900 13px Arial';ctx.fillText('YÊU VƯƠNG · '+Math.ceil(boss.hp)+' / '+Math.ceil(boss.maxHp),W/2,y+14);ctx.textAlign='left';
 }
 function drawMinimap(){
   const x=W-170,y=130,r=74,p=state.player;ctx.save();ctx.translate(x,y);
