@@ -1,8 +1,33 @@
 package com.uschinsu.tvutility;
 
+import android.view.KeyEvent;
 import android.webkit.JavascriptInterface;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
+/**
+ * Lock-free controller state shared between Android's input thread and WebView's
+ * JavaScript bridge thread. Gameplay never queues evaluateJavascript calls.
+ */
 public final class GamepadStateBridge {
+
+    private static final int BTN_A = 1;
+    private static final int BTN_B = 2;
+    private static final int BTN_X = 4;
+    private static final int BTN_Y = 8;
+    private static final int BTN_L1 = 16;
+    private static final int BTN_R1 = 32;
+    private static final int BTN_L2 = 64;
+    private static final int BTN_R2 = 128;
+    private static final int BTN_SELECT = 256;
+    private static final int BTN_START = 512;
+    private static final int BTN_L3 = 1024;
+    private static final int BTN_R3 = 2048;
+    private static final int BTN_UP = 4096;
+    private static final int BTN_DOWN = 8192;
+    private static final int BTN_LEFT = 16384;
+    private static final int BTN_RIGHT = 32768;
+    private static final int BTN_CENTER = 65536;
 
     private volatile boolean lowLatencyMode = false;
     private volatile String device = "";
@@ -16,40 +41,16 @@ public final class GamepadStateBridge {
     private volatile float lt = 0f;
     private volatile float rt = 0f;
 
-    private volatile boolean a = false;
-    private volatile boolean b = false;
-    private volatile boolean x = false;
-    private volatile boolean y = false;
-    private volatile boolean l1 = false;
-    private volatile boolean r1 = false;
-    private volatile boolean l2 = false;
-    private volatile boolean r2 = false;
-    private volatile boolean select = false;
-    private volatile boolean start = false;
-    private volatile boolean l3 = false;
-    private volatile boolean r3 = false;
-    private volatile boolean dpadUp = false;
-    private volatile boolean dpadDown = false;
-    private volatile boolean dpadLeft = false;
-    private volatile boolean dpadRight = false;
-    private volatile boolean dpadCenter = false;
-
-    // Sticky one-read pulses prevent ultra-fast taps from disappearing between JS frames.
-    private volatile boolean aPulse = false;
-    private volatile boolean bPulse = false;
-    private volatile boolean xPulse = false;
-    private volatile boolean yPulse = false;
-    private volatile boolean startPulse = false;
-    private volatile boolean upPulse = false;
-    private volatile boolean downPulse = false;
-    private volatile boolean leftPulse = false;
-    private volatile boolean rightPulse = false;
-    private volatile boolean centerPulse = false;
+    // Current held buttons + sticky one-read pulses for very short taps.
+    // Atomic bitmasks avoid synchronized monitor contention between WebView JS
+    // and Android input delivery.
+    private final AtomicInteger buttons = new AtomicInteger(0);
+    private final AtomicInteger pulses = new AtomicInteger(0);
 
     @JavascriptInterface
-    public synchronized void setLowLatencyMode(boolean enabled) {
+    public void setLowLatencyMode(boolean enabled) {
         lowLatencyMode = enabled;
-        if (!enabled) resetLocked();
+        if (!enabled) resetNative();
     }
 
     public boolean isLowLatencyModeNative() {
@@ -79,101 +80,114 @@ public final class GamepadStateBridge {
         this.rt = rt;
     }
 
-    public synchronized void setButton(String name, boolean down) {
-        if (name == null) return;
-        switch (name) {
-            case "A":
-                if (down && !a) aPulse = true;
-                a = down;
-                break;
-            case "B":
-                if (down && !b) bPulse = true;
-                b = down;
-                break;
-            case "X":
-                if (down && !x) xPulse = true;
-                x = down;
-                break;
-            case "Y":
-                if (down && !y) yPulse = true;
-                y = down;
-                break;
-            case "L1": l1 = down; break;
-            case "R1": r1 = down; break;
-            case "L2": l2 = down; break;
-            case "R2": r2 = down; break;
-            case "SELECT": select = down; break;
-            case "START":
-                if (down && !start) startPulse = true;
-                start = down;
-                break;
-            case "L3": l3 = down; break;
-            case "R3": r3 = down; break;
-            case "DPAD_UP":
-                if (down && !dpadUp) upPulse = true;
-                dpadUp = down;
-                break;
-            case "DPAD_DOWN":
-                if (down && !dpadDown) downPulse = true;
-                dpadDown = down;
-                break;
-            case "DPAD_LEFT":
-                if (down && !dpadLeft) leftPulse = true;
-                dpadLeft = down;
-                break;
-            case "DPAD_RIGHT":
-                if (down && !dpadRight) rightPulse = true;
-                dpadRight = down;
-                break;
-            case "DPAD_CENTER":
-                if (down && !dpadCenter) centerPulse = true;
-                dpadCenter = down;
-                break;
-            default: break;
+    private static void atomicOr(AtomicInteger target, int bit) {
+        int oldValue;
+        int newValue;
+        do {
+            oldValue = target.get();
+            newValue = oldValue | bit;
+            if (oldValue == newValue) return;
+        } while (!target.compareAndSet(oldValue, newValue));
+    }
+
+    private static void atomicAndNot(AtomicInteger target, int bit) {
+        int oldValue;
+        int newValue;
+        do {
+            oldValue = target.get();
+            newValue = oldValue & ~bit;
+            if (oldValue == newValue) return;
+        } while (!target.compareAndSet(oldValue, newValue));
+    }
+
+    private void updateButton(int bit, boolean down) {
+        if (bit == 0) return;
+        if (down) {
+            int oldValue;
+            int newValue;
+            do {
+                oldValue = buttons.get();
+                newValue = oldValue | bit;
+                if (oldValue == newValue) return;
+            } while (!buttons.compareAndSet(oldValue, newValue));
+            // Preserve the rising edge until JavaScript has consumed one sample.
+            atomicOr(pulses, bit);
+        } else {
+            atomicAndNot(buttons, bit);
         }
     }
 
-    private int buttonMask(
-            boolean outA, boolean outB, boolean outX, boolean outY,
-            boolean outUp, boolean outDown, boolean outLeft, boolean outRight,
-            boolean outCenter, boolean outStart
-    ) {
-        int mask = 0;
-        if (outA) mask |= 1;
-        if (outB) mask |= 2;
-        if (outX) mask |= 4;
-        if (outY) mask |= 8;
-        if (l1) mask |= 16;
-        if (r1) mask |= 32;
-        if (l2) mask |= 64;
-        if (r2) mask |= 128;
-        if (select) mask |= 256;
-        if (outStart) mask |= 512;
-        if (l3) mask |= 1024;
-        if (r3) mask |= 2048;
-        if (outUp) mask |= 4096;
-        if (outDown) mask |= 8192;
-        if (outLeft) mask |= 16384;
-        if (outRight) mask |= 32768;
-        if (outCenter) mask |= 65536;
-        return mask;
+    private int bitForKeyCode(int keyCode) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_BUTTON_A: return BTN_A;
+            case KeyEvent.KEYCODE_BUTTON_B:
+            case KeyEvent.KEYCODE_BACK: return BTN_B;
+            case KeyEvent.KEYCODE_BUTTON_X: return BTN_X;
+            case KeyEvent.KEYCODE_BUTTON_Y: return BTN_Y;
+            case KeyEvent.KEYCODE_BUTTON_L1: return BTN_L1;
+            case KeyEvent.KEYCODE_BUTTON_R1: return BTN_R1;
+            case KeyEvent.KEYCODE_BUTTON_L2: return BTN_L2;
+            case KeyEvent.KEYCODE_BUTTON_R2: return BTN_R2;
+            case KeyEvent.KEYCODE_BUTTON_SELECT: return BTN_SELECT;
+            case KeyEvent.KEYCODE_BUTTON_START: return BTN_START;
+            case KeyEvent.KEYCODE_BUTTON_THUMBL: return BTN_L3;
+            case KeyEvent.KEYCODE_BUTTON_THUMBR: return BTN_R3;
+            case KeyEvent.KEYCODE_DPAD_UP: return BTN_UP;
+            case KeyEvent.KEYCODE_DPAD_DOWN: return BTN_DOWN;
+            case KeyEvent.KEYCODE_DPAD_LEFT: return BTN_LEFT;
+            case KeyEvent.KEYCODE_DPAD_RIGHT: return BTN_RIGHT;
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+            case KeyEvent.KEYCODE_ENTER:
+            case KeyEvent.KEYCODE_NUMPAD_ENTER:
+            case KeyEvent.KEYCODE_SPACE:
+                return BTN_CENTER;
+            default: return 0;
+        }
+    }
+
+    public boolean setButtonCode(int keyCode, boolean down) {
+        int bit = bitForKeyCode(keyCode);
+        if (bit == 0) return false;
+        updateButton(bit, down);
+        return true;
+    }
+
+    // Compatibility path for any older native caller.
+    public void setButton(String name, boolean down) {
+        if (name == null) return;
+        int bit;
+        switch (name) {
+            case "A": bit = BTN_A; break;
+            case "B": bit = BTN_B; break;
+            case "X": bit = BTN_X; break;
+            case "Y": bit = BTN_Y; break;
+            case "L1": bit = BTN_L1; break;
+            case "R1": bit = BTN_R1; break;
+            case "L2": bit = BTN_L2; break;
+            case "R2": bit = BTN_R2; break;
+            case "SELECT": bit = BTN_SELECT; break;
+            case "START": bit = BTN_START; break;
+            case "L3": bit = BTN_L3; break;
+            case "R3": bit = BTN_R3; break;
+            case "DPAD_UP": bit = BTN_UP; break;
+            case "DPAD_DOWN": bit = BTN_DOWN; break;
+            case "DPAD_LEFT": bit = BTN_LEFT; break;
+            case "DPAD_RIGHT": bit = BTN_RIGHT; break;
+            case "DPAD_CENTER": bit = BTN_CENTER; break;
+            default: bit = 0; break;
+        }
+        updateButton(bit, down);
+    }
+
+    private int snapshotButtons() {
+        // Pulses arriving after getAndSet(0) remain queued for the next JS read.
+        return buttons.get() | pulses.getAndSet(0);
     }
 
     @JavascriptInterface
-    public synchronized String readPacked() {
+    public String readPacked() {
         if (!lowLatencyMode) return "";
-        boolean outA = a || aPulse;
-        boolean outB = b || bPulse;
-        boolean outX = x || xPulse;
-        boolean outY = y || yPulse;
-        boolean outStart = start || startPulse;
-        boolean outUp = dpadUp || upPulse;
-        boolean outDown = dpadDown || downPulse;
-        boolean outLeft = dpadLeft || leftPulse;
-        boolean outRight = dpadRight || rightPulse;
-        boolean outCenter = dpadCenter || centerPulse;
-        int mask = buttonMask(outA, outB, outX, outY, outUp, outDown, outLeft, outRight, outCenter, outStart);
-        clearPulsesLocked();
+        int mask = snapshotButtons();
         return new StringBuilder(112)
                 .append(lx).append('|')
                 .append(ly).append('|')
@@ -187,23 +201,14 @@ public final class GamepadStateBridge {
                 .toString();
     }
 
-    // Current TV web builds use this API. It keeps compatibility while using
-    // native sticky button pulses so fast taps are still visible for one read.
+    // Compatibility API used by current web builds. It is now lock-free even
+    // before the web switches to the faster readPacked() format.
     @JavascriptInterface
-    public synchronized String readState() {
+    public String readState() {
         if (!lowLatencyMode) return "";
-        boolean outA = a || aPulse;
-        boolean outB = b || bPulse;
-        boolean outX = x || xPulse;
-        boolean outY = y || yPulse;
-        boolean outStart = start || startPulse;
-        boolean outUp = dpadUp || upPulse;
-        boolean outDown = dpadDown || downPulse;
-        boolean outLeft = dpadLeft || leftPulse;
-        boolean outRight = dpadRight || rightPulse;
-        boolean outCenter = dpadCenter || centerPulse;
+        int mask = snapshotButtons();
 
-        String value = new StringBuilder(240)
+        return new StringBuilder(224)
                 .append('{')
                 .append("\"lx\":").append(lx)
                 .append(",\"ly\":").append(ly)
@@ -213,37 +218,28 @@ public final class GamepadStateBridge {
                 .append(",\"hatY\":").append(hatY)
                 .append(",\"lt\":").append(lt)
                 .append(",\"rt\":").append(rt)
-                .append(",\"a\":").append(outA)
-                .append(",\"b\":").append(outB)
-                .append(",\"xButton\":").append(outX)
-                .append(",\"yButton\":").append(outY)
-                .append(",\"l1\":").append(l1)
-                .append(",\"r1\":").append(r1)
-                .append(",\"l2\":").append(l2)
-                .append(",\"r2\":").append(r2)
-                .append(",\"select\":").append(select)
-                .append(",\"start\":").append(outStart)
-                .append(",\"up\":").append(outUp)
-                .append(",\"down\":").append(outDown)
-                .append(",\"left\":").append(outLeft)
-                .append(",\"right\":").append(outRight)
-                .append(",\"dpadCenter\":").append(outCenter)
+                .append(",\"a\":").append((mask & BTN_A) != 0)
+                .append(",\"b\":").append((mask & BTN_B) != 0)
+                .append(",\"xButton\":").append((mask & BTN_X) != 0)
+                .append(",\"yButton\":").append((mask & BTN_Y) != 0)
+                .append(",\"l1\":").append((mask & BTN_L1) != 0)
+                .append(",\"r1\":").append((mask & BTN_R1) != 0)
+                .append(",\"l2\":").append((mask & BTN_L2) != 0)
+                .append(",\"r2\":").append((mask & BTN_R2) != 0)
+                .append(",\"select\":").append((mask & BTN_SELECT) != 0)
+                .append(",\"start\":").append((mask & BTN_START) != 0)
+                .append(",\"up\":").append((mask & BTN_UP) != 0)
+                .append(",\"down\":").append((mask & BTN_DOWN) != 0)
+                .append(",\"left\":").append((mask & BTN_LEFT) != 0)
+                .append(",\"right\":").append((mask & BTN_RIGHT) != 0)
+                .append(",\"dpadCenter\":").append((mask & BTN_CENTER) != 0)
                 .append('}')
                 .toString();
-
-        clearPulsesLocked();
-        return value;
     }
 
-    private void clearPulsesLocked() {
-        aPulse = bPulse = xPulse = yPulse = startPulse = false;
-        upPulse = downPulse = leftPulse = rightPulse = centerPulse = false;
-    }
-
-    private void resetLocked() {
+    private void resetNative() {
         lx = ly = rx = ry = hatX = hatY = lt = rt = 0f;
-        a = b = x = y = l1 = r1 = l2 = r2 = select = start = l3 = r3 = false;
-        dpadUp = dpadDown = dpadLeft = dpadRight = dpadCenter = false;
-        clearPulsesLocked();
+        buttons.set(0);
+        pulses.set(0);
     }
 }
