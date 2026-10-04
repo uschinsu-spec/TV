@@ -1,9 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffb6c9"/><stop offset=".25" stop-color="#ff5f83"/><stop offset=".75" stop-color="#a51f53"/><stop offset="1" stop-color="#3e0b28"/></linearGradient><filter id="f"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-<g filter="url(#f)">
- <path d="M55 55h146v146H55z" rx="24" fill="url(#g)" stroke="#ffb0c9" stroke-width="7"/>
- <path d="M83 83h90v90H83z" fill="#43122c" stroke="#f7669d" stroke-width="6"/>
- <path d="M128 33v34M128 189v34M33 128h34M189 128h34" stroke="#ff6d9f" stroke-width="16" stroke-linecap="round"/>
- <circle cx="128" cy="128" r="28" fill="#1c0b18" stroke="#ffd0df" stroke-width="5"/>
- <path d="m128 105 20 35h-40z" fill="#fff"/>
-</g></svg>
+<defs>
+ <linearGradient id="armor" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffb1c3"/><stop offset=".25" stop-color="#f44f78"/><stop offset=".62" stop-color="#8c1d50"/><stop offset="1" stop-color="#310a2d"/></linearGradient>
+ <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#662448"/><stop offset="1" stop-color="#130916"/></linearGradient>
+ <radialGradient id="core"><stop stop-color="#fff"/><stop offset=".22" stop-color="#ffd0df"/><stop offset=".58" stop-color="#ff5d97"/><stop offset="1" stop-color="#9c174f"/></radialGradient>
+ <filter id="g" x="-25%" y="-25%" width="150%" height="150%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<g filter="url(#g)">
+ <path d="M63 43h130l20 20v130l-20 20H63l-20-20V63z" fill="#170b18" stroke="#ff6d9f" stroke-width="6"/>
+ <path d="m128 38 25 23h35l7 35 23 32-23 32-7 35h-35l-25 23-25-23H68l-7-35-23-32 23-32 7-35h35z" fill="url(#armor)" stroke="#ffafc7" stroke-width="5"/>
+ <path d="M87 87h82v82H87z" fill="url(#metal)" stroke="#b83a70" stroke-width="5"/>
+ <path d="M128 51v29M128 205v-29M51 128h29M205 128h-29" stroke="#ffd0df" stroke-width="9" stroke-linecap="round"/>
+ <circle cx="128" cy="128" r="35" fill="#130b14" stroke="#ff7aa9" stroke-width="5"/>
+ <circle cx="128" cy="128" r="20" fill="url(#core)"/>
+ <path d="m128 111 15 26h-30z" fill="#fff"/>
+ <path d="M77 77l16 16M179 77l-16 16M77 179l16-16M179 179l-16-16" stroke="#ffbfd0" stroke-width="5" stroke-linecap="round"/>
+</g>
+</svg>
