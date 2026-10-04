@@ -5,6 +5,16 @@ window.tvGameActive=false;
 
 const GAMES=[
   {
+    id:'friend-soccer',
+    title:'Friend Soccer',
+    icon:'⚽',
+    badge:'FOOTBALL',
+    genre:'11v11 · Soccer',
+    desc:'Đá banh 11 người, AI lấp vị trí trống, chơi solo hoặc nhiều người và hỗ trợ gamepad.',
+    url:'https://krool.github.io/friend-soccer/',
+    theme:'soccer'
+  },
+  {
     id:'high-on-track',
     title:'High On Track',
     icon:'🏎️',
